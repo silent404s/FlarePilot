@@ -21,6 +21,9 @@ try:
     # Set Windows App ID agar icon di taskbar & window konsisten
     myappid = 'flarepilot.domainmanager.v1'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+    
+    # Aktifkan High DPI Awareness agar UI/Icon tajam (anti-blur)
+    ctypes.windll.shcore.SetProcessDpiAwareness(1)
 except Exception:
     pass
 
@@ -1339,7 +1342,7 @@ class App(ctk.CTk):
             
         self.geometry("1150x740")
         self.minsize(1024, 650)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
         
         self.config = config_manager.load_config()
         
@@ -1372,12 +1375,12 @@ class App(ctk.CTk):
         self.grid_columnconfigure(1, weight=2)
         self.grid_rowconfigure(0, weight=1)
         
-        self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
-        self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
-        self.log_font = ctk.CTkFont(family="Consolas", size=10)
+        self.custom_font = ctk.CTkFont(family="Segoe UI", size=12)
+        self.bold_font = ctk.CTkFont(family="Segoe UI", size=12, weight="bold")
+        self.log_font = ctk.CTkFont(family="Consolas", size=11)
         
         # Left Panel (Inputs)
-        left_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        left_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8, border_width=1, border_color="#1F2937")
         left_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
         
         ctk.CTkLabel(left_frame, text="Settings", font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold")).pack(pady=(10, 5))
@@ -1397,13 +1400,13 @@ class App(ctk.CTk):
         self.profile_menu = ctk.CTkOptionMenu(profile_frame, variable=self.profile_var, values=profiles, command=self.on_profile_change, font=self.custom_font, corner_radius=8)
         self.profile_menu.pack(side="left", fill="x", expand=True, padx=(0, 4))
         
-        btn_add_prof = ctk.CTkButton(profile_frame, text="+ Add", width=45, command=self.add_profile_dialog, font=self.custom_font, fg_color="#0284C7", hover_color="#0369A1", corner_radius=8)
+        btn_add_prof = ctk.CTkButton(profile_frame, text="+ Add", width=45, command=self.add_profile_dialog, font=self.custom_font, fg_color="#3B82F6", hover_color="#2563EB", corner_radius=8)
         btn_add_prof.pack(side="left", padx=(0, 3))
 
-        btn_save_prof = ctk.CTkButton(profile_frame, text="Save", width=45, command=self.save_current_config_with_msg, font=self.custom_font, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8)
+        btn_save_prof = ctk.CTkButton(profile_frame, text="Save", width=45, command=self.save_current_config_with_msg, font=self.custom_font, fg_color="#1E293B", hover_color="#0F172A", border_width=1, border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         btn_save_prof.pack(side="left", padx=(0, 3))
         
-        btn_del_prof = ctk.CTkButton(profile_frame, text="Del", width=38, fg_color="#8A1A23", hover_color="#A11E29", command=self.delete_profile, font=self.custom_font, corner_radius=8)
+        btn_del_prof = ctk.CTkButton(profile_frame, text="Del", width=38, fg_color="#DC2626", hover_color="#B91C1C", command=self.delete_profile, font=self.custom_font, corner_radius=8)
         btn_del_prof.pack(side="left")
 
         # Auth Method
@@ -1413,13 +1416,13 @@ class App(ctk.CTk):
         ctk.CTkRadioButton(auth_frame, text="API Token", font=self.custom_font, variable=self.auth_var, value="token", command=self.toggle_auth).pack(side="left", padx=5)
         ctk.CTkRadioButton(auth_frame, text="Global API Key", font=self.custom_font, variable=self.auth_var, value="global", command=self.toggle_auth).pack(side="left", padx=5)
         
-        self.token_entry = ctk.CTkEntry(left_frame, placeholder_text="Cloudflare API Token", show="*", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.token_entry = ctk.CTkEntry(left_frame, placeholder_text="Cloudflare API Token", show="*", font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         self.token_entry.pack(fill="x", padx=10, pady=5)
         
-        self.email_entry = ctk.CTkEntry(left_frame, placeholder_text="Cloudflare Email", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.email_entry = ctk.CTkEntry(left_frame, placeholder_text="Cloudflare Email", font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         self.email_entry.pack(fill="x", padx=10, pady=5)
         
-        self.global_key_entry = ctk.CTkEntry(left_frame, placeholder_text="Global API Key", show="*", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.global_key_entry = ctk.CTkEntry(left_frame, placeholder_text="Global API Key", show="*", font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         self.global_key_entry.pack(fill="x", padx=10, pady=5)
         
         ip_batch_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
@@ -1428,13 +1431,13 @@ class App(ctk.CTk):
         ip_subframe = ctk.CTkFrame(ip_batch_frame, fg_color="transparent")
         ip_subframe.pack(side="left", fill="x", expand=True, padx=(0, 5))
         ctk.CTkLabel(ip_subframe, text="Target IPv4 Address", font=self.custom_font).pack(anchor="w", pady=(0, 2))
-        self.ip_entry = ctk.CTkEntry(ip_subframe, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.ip_entry = ctk.CTkEntry(ip_subframe, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         self.ip_entry.pack(fill="x")
 
         batch_subframe = ctk.CTkFrame(ip_batch_frame, fg_color="transparent", width=90)
         batch_subframe.pack(side="left", fill="x")
         ctk.CTkLabel(batch_subframe, text="Batch Size", font=self.custom_font).pack(anchor="w", pady=(0, 2))
-        self.batch_entry = ctk.CTkEntry(batch_subframe, placeholder_text="10", width=80, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.batch_entry = ctk.CTkEntry(batch_subframe, placeholder_text="10", width=80, font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", corner_radius=8)
         self.batch_entry.pack(fill="x")
         self.batch_entry.insert(0, str(self.config.get("batch_size", 10)))
         
@@ -1443,16 +1446,16 @@ class App(ctk.CTk):
         dom_head_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
         dom_head_frame.pack(fill="x", pady=(10, 0), padx=10)
         ctk.CTkLabel(dom_head_frame, text="Domains (One per line, or domain, ip)", font=self.custom_font).pack(side="left")
-        ctk.CTkButton(dom_head_frame, text="Hapus Text", font=self.custom_font, width=70, height=20, command=lambda: self.domains_text.delete("1.0", "end"), fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+        ctk.CTkButton(dom_head_frame, text="Hapus Text", font=self.custom_font, width=70, height=20, command=lambda: self.domains_text.delete("1.0", "end"), fg_color="#1E293B", hover_color="#0F172A", corner_radius=6).pack(side="right")
 
-        self.domains_text = ctk.CTkTextbox(left_frame, height=120, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
+        self.domains_text = ctk.CTkTextbox(left_frame, height=120, font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", border_width=1, corner_radius=8)
         self.domains_text.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Add domains button
-        ctk.CTkButton(left_frame, text="Load Domains to Queue", font=self.bold_font, height=34, command=self.load_domains, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(fill="x", padx=10, pady=(6, 8))
+        ctk.CTkButton(left_frame, text="Load Domains to Queue", font=self.bold_font, height=34, command=self.load_domains, fg_color="#1E293B", hover_color="#0F172A", border_width=1, border_color="#334155", text_color="#FFFFFF", corner_radius=8).pack(fill="x", padx=10, pady=(6, 8))
 
         # Queue Persistence & Cache Cleanup Options
-        cache_opts_frame = ctk.CTkFrame(left_frame, fg_color="#222222", corner_radius=6)
+        cache_opts_frame = ctk.CTkFrame(left_frame, fg_color="#1F2937", corner_radius=6)
         cache_opts_frame.pack(fill="x", padx=10, pady=(0, 10))
 
         self.clear_done_var = tk.BooleanVar(value=self.config.get("clear_done_on_close", True))
@@ -1462,7 +1465,7 @@ class App(ctk.CTk):
         ctk.CTkCheckBox(cache_opts_frame, text="Kosongkan antrian saat exit", font=ctk.CTkFont(family="Segoe UI", size=10), variable=self.clear_all_on_close_var, command=self.save_queue_settings).pack(anchor="w", padx=8, pady=(2, 5))
         
         # Right Panel (List and Logs)
-        right_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        right_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8, border_width=1, border_color="#1F2937")
         right_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
         right_frame.grid_rowconfigure(1, weight=2)
         right_frame.grid_rowconfigure(3, weight=1)
@@ -1476,41 +1479,30 @@ class App(ctk.CTk):
         row1_frame = ctk.CTkFrame(controls_frame, fg_color="transparent")
         row1_frame.pack(fill="x", pady=(0, 5))
         
-        self.btn_start = ctk.CTkButton(row1_frame, text="Start", font=self.bold_font, command=self.start_process, fg_color="#185C37", hover_color="#1B6C40", width=80, height=30, corner_radius=8)
+        self.btn_start = ctk.CTkButton(row1_frame, text="Start", font=self.bold_font, command=self.start_process, fg_color="#2563EB", hover_color="#1D4ED8", width=80, height=30, corner_radius=8)
         self.btn_start.pack(side="left", padx=(0, 5))
         
-        self.btn_update_ip = ctk.CTkButton(row1_frame, text="Ubah IP", font=self.bold_font, command=lambda: self.open_update_ip_dialog(), fg_color="#D97706", hover_color="#B45309", width=80, height=30, corner_radius=8)
+        self.btn_update_ip = ctk.CTkButton(row1_frame, text="Ubah IP", font=self.bold_font, command=lambda: self.open_update_ip_dialog(), fg_color="#0891B2", hover_color="#0E7490", width=80, height=30, corner_radius=8)
         self.btn_update_ip.pack(side="left", padx=5)
 
-        self.btn_add_subdomain = ctk.CTkButton(row1_frame, text="+ Subdomain", font=self.bold_font, command=lambda: self.open_add_subdomain_dialog(), fg_color="#0284C7", hover_color="#0369A1", width=100, height=30, corner_radius=8)
+        self.btn_add_subdomain = ctk.CTkButton(row1_frame, text="+ Subdomain", font=self.bold_font, command=lambda: self.open_add_subdomain_dialog(), fg_color="#475569", hover_color="#334155", width=100, height=30, corner_radius=8)
         self.btn_add_subdomain.pack(side="left", padx=5)
 
-        self.btn_rules = ctk.CTkButton(row1_frame, text="⚡ CF Rules", font=self.bold_font, command=self.open_redirect_rules_dialog, fg_color="#7C3AED", hover_color="#6D28D9", width=95, height=30, corner_radius=8)
+        self.btn_rules = ctk.CTkButton(row1_frame, text="⚡ CF Rules", font=self.bold_font, command=self.open_redirect_rules_dialog, fg_color="#8B5CF6", hover_color="#7C3AED", width=95, height=30, corner_radius=8)
         self.btn_rules.pack(side="left", padx=5)
         
-        self.btn_stop = ctk.CTkButton(row1_frame, text="Stop", font=self.bold_font, command=self.stop_process, fg_color="#8A1A23", hover_color="#A11E29", state="disabled", width=75, height=30, corner_radius=8)
-        self.btn_stop.pack(side="right", padx=(5, 0))
 
-        self.btn_resume = ctk.CTkButton(row1_frame, text="Resume", font=self.bold_font, command=self.resume_process, state="disabled", width=75, height=30, fg_color="#005FB8", hover_color="#0078D4", corner_radius=8)
-        self.btn_resume.pack(side="right", padx=5)
-
-        self.btn_pause = ctk.CTkButton(row1_frame, text="Pause", font=self.bold_font, command=self.pause_process, state="disabled", width=75, height=30, fg_color="#005FB8", hover_color="#0078D4", corner_radius=8)
-        self.btn_pause.pack(side="right", padx=5)
-        
         # Row 2: Queue Management & Utility Controls
         row2_frame = ctk.CTkFrame(controls_frame, fg_color="transparent")
         row2_frame.pack(fill="x")
 
         ctk.CTkLabel(row2_frame, text="Antrian:", font=self.custom_font, text_color="#A0A0A0").pack(side="left", padx=(0, 5))
 
-        ctk.CTkButton(row2_frame, text="Clear Queue", font=self.custom_font, command=self.clear_queue, width=90, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
-        ctk.CTkButton(row2_frame, text="Hapus Selesai", font=self.custom_font, command=self.clear_done_queue, width=95, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
-        ctk.CTkButton(row2_frame, text="🧹 Reset Cache", font=self.custom_font, command=self.reset_all_cache, width=100, height=28, fg_color="#8A1A23", hover_color="#A11E29", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
+        ctk.CTkButton(row2_frame, text="🧹 Reset Cache", font=self.custom_font, command=self.reset_all_cache, width=100, height=28, fg_color="#DC2626", hover_color="#B91C1C", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
 
-        ctk.CTkButton(row2_frame, text="Show NS", font=self.custom_font, command=self.show_ns_summary, width=80, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=(5, 0))
-        ctk.CTkButton(row2_frame, text="Export CSV", font=self.custom_font, command=self.export_csv, width=85, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
-        ctk.CTkButton(row2_frame, text="🔍 Cek IP & Profil CF", font=self.custom_font, command=self.open_check_ip_dialog, width=140, height=28, fg_color="#7C3AED", hover_color="#6D28D9", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
-        ctk.CTkButton(row2_frame, text="⚡ Cek Update", font=self.custom_font, command=self.check_updates_manual, width=95, height=28, fg_color="#10B981", hover_color="#059669", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
+        ctk.CTkButton(row2_frame, text="Export CSV", font=self.custom_font, command=self.export_csv, width=85, height=28, fg_color="#1E293B", hover_color="#0F172A", border_width=1, border_color="#334155", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
+        ctk.CTkButton(row2_frame, text="🔍 Cek IP & Profil CF", font=self.custom_font, command=self.open_check_ip_dialog, width=140, height=28, fg_color="#4F46E5", hover_color="#4338CA", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
+        ctk.CTkButton(row2_frame, text="⚡ Cek Update", font=self.custom_font, command=self.check_updates_manual, width=95, height=28, fg_color="#059669", hover_color="#047857", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
 
         # Domains List (using standard Treeview for columns inside a tkinter Frame)
         list_frame = ctk.CTkFrame(right_frame)
@@ -1537,12 +1529,15 @@ class App(ctk.CTk):
         # A bit of styling for the treeview in dark mode
         style = tk.ttk.Style(self)
         style.theme_use("default")
-        style.configure("Custom.Treeview", background="#202020", fieldbackground="#202020", foreground="white", borderwidth=0, font=("Segoe UI", 10), rowheight=25)
-        style.map('Custom.Treeview', background=[('selected', '#005FB8')])
-        style.configure("Custom.Treeview.Heading", background="#282828", foreground="white", relief="flat", font=("Segoe UI", 11, "bold"))
+        style.configure("Custom.Treeview", background="#0B0F19", fieldbackground="#0B0F19", foreground="white", borderwidth=0, font=("Segoe UI", 11), rowheight=40)
+        style.map('Custom.Treeview', background=[('selected', '#2563EB')])
+        style.configure("Custom.Treeview.Heading", background="#1F2937", foreground="white", relief="flat", font=("Segoe UI", 11, "bold"))
+        style.map('Custom.Treeview.Heading', background=[('active', '#334155')])
         
-        self.tree.tag_configure("evenrow", background="#202020")
-        self.tree.tag_configure("oddrow", background="#282828")
+        self.tree.tag_configure("evenrow", background="#0B0F19", foreground="white")
+        self.tree.tag_configure("oddrow", background="#111827", foreground="white")
+        self.tree.tag_configure("hover", background="#1E293B", foreground="white")
+        self.hovered_item = None
         
         self.tree.grid(row=0, column=0, sticky="nsew")
         
@@ -1557,13 +1552,51 @@ class App(ctk.CTk):
         self.progress.set(0)
         
         # Log Box
-        self.log_text = ctk.CTkTextbox(right_frame, height=120, font=self.log_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
+        self.log_text = ctk.CTkTextbox(right_frame, height=120, font=self.custom_font, fg_color="#1E293B", border_color="#334155", text_color="#FFFFFF", border_width=1, corner_radius=8)
         self.log_text.grid(row=3, column=0, sticky="nsew", pady=(5, 10), padx=10)
         self.log_text.configure(state="disabled")
         
         # Bind right click & double click on Treeview
         self.tree.bind("<Button-3>", self.on_right_click)
         self.tree.bind("<Double-1>", self.on_double_click)
+        
+        # Bind hover effects
+        self.tree.bind("<Motion>", self.on_tree_hover)
+        self.tree.bind("<Leave>", self.on_tree_leave)
+
+    def on_tree_hover(self, event):
+        item_id = self.tree.identify_row(event.y)
+        # Restore previous hovered item's original tag if we moved to a new item
+        if self.hovered_item and self.hovered_item != item_id:
+            try:
+                tags = list(self.tree.item(self.hovered_item, "tags"))
+                if "hover" in tags:
+                    tags.remove("hover")
+                    self.tree.item(self.hovered_item, tags=tags)
+            except Exception:
+                pass
+                
+        # Set new hover
+        if item_id:
+            try:
+                tags = list(self.tree.item(item_id, "tags"))
+                if "hover" not in tags:
+                    tags.append("hover")
+                    self.tree.item(item_id, tags=tags)
+                self.hovered_item = item_id
+            except Exception:
+                pass
+
+    def on_tree_leave(self, event):
+        if self.hovered_item:
+            try:
+                tags = list(self.tree.item(self.hovered_item, "tags"))
+                if "hover" in tags:
+                    tags.remove("hover")
+                    self.tree.item(self.hovered_item, tags=tags)
+            except Exception:
+                pass
+            self.hovered_item = None
 
     def on_right_click(self, event):
         item_id = self.tree.identify_row(event.y)
@@ -1987,9 +2020,6 @@ class App(ctk.CTk):
         self.btn_start.configure(state="normal")
         self.btn_update_ip.configure(state="normal")
         self.btn_add_subdomain.configure(state="normal")
-        self.btn_pause.configure(state="disabled")
-        self.btn_resume.configure(state="disabled")
-        self.btn_stop.configure(state="disabled")
 
     def start_process(self):
         ip = self.ip_entry.get().strip()
@@ -2014,8 +2044,6 @@ class App(ctk.CTk):
         self.btn_start.configure(state="disabled")
         self.btn_update_ip.configure(state="disabled")
         self.btn_add_subdomain.configure(state="disabled")
-        self.btn_pause.configure(state="normal")
-        self.btn_stop.configure(state="normal")
         
         self.queue_manager = QueueManager(
             config=self.config,
@@ -2060,8 +2088,6 @@ class App(ctk.CTk):
         self.btn_start.configure(state="disabled")
         self.btn_update_ip.configure(state="disabled")
         self.btn_add_subdomain.configure(state="disabled")
-        self.btn_pause.configure(state="normal")
-        self.btn_stop.configure(state="normal")
         
         self.queue_manager = QueueManager(
             config=self.config,
@@ -2126,43 +2152,7 @@ class App(ctk.CTk):
         self.update_domains_listbox()
         app_logger.info(f"Status domain '{domain_name}' direset ke Pending.")
 
-    def pause_process(self):
-        if self.queue_manager:
-            self.queue_manager.pause()
-            self.btn_pause.configure(state="disabled")
-            self.btn_resume.configure(state="normal")
 
-    def resume_process(self):
-        if self.queue_manager:
-            self.queue_manager.resume()
-            self.btn_resume.configure(state="disabled")
-            self.btn_pause.configure(state="normal")
-
-    def stop_process(self):
-        if self.queue_manager:
-            self.queue_manager.stop()
-            self.btn_pause.configure(state="disabled")
-            self.btn_resume.configure(state="disabled")
-            # Start button re-enabled by the callback when thread finishes
-
-    def clear_queue(self):
-        if messagebox.askyesno("Confirm", "Are you sure you want to clear the queue and state?", parent=self):
-            self.domains_data = []
-            export_utils.clear_state()
-            self.update_domains_listbox()
-            app_logger.info("Queue cleared.")
-
-    def clear_done_queue(self):
-        done_items = [d for d in self.domains_data if d.get('status') == 'Success']
-        if not done_items:
-            messagebox.showinfo("Info", "Tidak ada domain berstatus 'Success' di antrian.", parent=self)
-            return
-            
-        if messagebox.askyesno("Konfirmasi", f"Apakah Anda yakin ingin menghapus {len(done_items)} domain yang sudah sukses dari antrian?", parent=self):
-            self.domains_data = [d for d in self.domains_data if d.get('status') != 'Success']
-            export_utils.save_state(self.domains_data)
-            self.update_domains_listbox()
-            app_logger.info(f"{len(done_items)} domain berstatus Success telah dihapus dari antrian.")
 
     def save_queue_settings(self):
         self.config["clear_done_on_close"] = self.clear_done_var.get()
@@ -2221,38 +2211,6 @@ class App(ctk.CTk):
             if export_utils.export_to_csv(self.domains_data, filename):
                 messagebox.showinfo("Success", f"Exported to {filename}", parent=self)
 
-    def show_ns_summary(self):
-        # Group domains by nameserver
-        summary = {}
-        for item in self.domains_data:
-            if item.get('status') == 'Success' and item.get('nameservers'):
-                ns = item['nameservers']
-                if ns not in summary:
-                    summary[ns] = []
-                summary[ns].append(item['domain'])
-                
-        if not summary:
-            messagebox.showinfo("NS Summary", "No successfully processed domains with nameservers found.", parent=self)
-            return
-            
-        # Create a new top level window
-        top = ctk.CTkToplevel(self)
-        top.title("Nameserver Summary")
-        top.geometry("600x500")
-        center_window_over_parent(top, self, 600, 500)
-        
-        textbox = ctk.CTkTextbox(top)
-        textbox.pack(fill="both", expand=True, padx=10, pady=10)
-        
-        report = []
-        for ns, domains in summary.items():
-            report.append(f"Nameservers: {ns} ({len(domains)} domains)")
-            for d in domains:
-                report.append(f"  - {d}")
-            report.append("")
-            
-        textbox.insert("1.0", "\n".join(report))
-        textbox.configure(state="disabled")
 
     def check_updates_auto(self):
         update_url = self.config.get("update_url", "")
