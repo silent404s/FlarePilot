@@ -11,8 +11,9 @@ def build():
         "PyInstaller",
         "--noconsole",
         "--onefile",
-        "--name=Cloudflare Bulk Domain Tool",
+        "--name=FlarePilot",
         "--icon=app_icon.ico",
+        "--add-data=app_icon.ico;.",
         "--distpath=../dist",
         "--workpath=../build",
         "--collect-all=customtkinter",
@@ -23,7 +24,7 @@ def build():
     result = subprocess.run(cmd)
     
     if result.returncode == 0:
-        exe_path = os.path.abspath("dist/Cloudflare Bulk Domain Tool.exe")
+        exe_path = os.path.abspath("../dist/FlarePilot.exe")
         print("\n=======================================================")
         print("BUILD EXECUTABLE SUCCESSFUL!")
         print(f"Executable created at:\n{exe_path}")

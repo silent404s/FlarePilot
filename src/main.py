@@ -1,3 +1,6 @@
+import os
+import sys
+import ctypes
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import messagebox, filedialog
@@ -6,12 +9,26 @@ import json
 import traceback
 
 import ipaddress
+import time
 import config_manager
 import export_utils
 import update_checker
 from logger import app_logger
 from queue_manager import QueueManager
 from cloudflare_api import CloudflareAPI, find_zone_across_profiles, check_domain_ip_and_profile
+
+try:
+    # Set Windows App ID agar icon di taskbar & window konsisten
+    myappid = 'flarepilot.domainmanager.v1'
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+except Exception:
+    pass
+
+def get_resource_path(relative_path):
+    """Mendapatkan path absolut ke resource, kompatibel dengan dev mode dan PyInstaller onefile."""
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
 
 def is_valid_ipv4(ip):
     if not ip:
@@ -520,10 +537,15 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         messagebox.showinfo("Berhasil", f"Berhasil memuat rules untuk domain '{domain_query}'!", parent=self)
 
     def append_log(self, message):
-        self.log_box.configure(state="normal")
-        self.log_box.insert("end", message + "\n")
-        self.log_box.see("end")
-        self.log_box.configure(state="disabled")
+        def _do_append():
+            try:
+                self.log_box.configure(state="normal")
+                self.log_box.insert("end", message + "\n")
+                self.log_box.see("end")
+                self.log_box.configure(state="disabled")
+            except Exception:
+                pass
+        self.after(0, _do_append)
 
     def start_process(self):
         custom_token = self.token_entry.get().strip() or None
@@ -695,11 +717,19 @@ class AddSubdomainDialog(ctk.CTkToplevel):
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=15, pady=(5, 10))
         
+        self.btn_clear = ctk.CTkButton(btn_frame, text="Reset Form", font=self.custom_font, width=90, fg_color="#2D2D2D", hover_color="#353535", command=self.clear_form, corner_radius=8)
+        self.btn_clear.pack(side="left")
+
         self.btn_cancel = ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#2D2D2D", hover_color="#353535", command=self.destroy, corner_radius=8)
         self.btn_cancel.pack(side="right", padx=(5, 0))
         
         self.btn_submit = ctk.CTkButton(btn_frame, text="Cari & Buat Subdomain", font=self.bold_font, width=160, fg_color="#0284C7", hover_color="#0369A1", command=self.start_submit, corner_radius=8)
         self.btn_submit.pack(side="right")
+
+    def clear_form(self):
+        self.domain_entry.delete(0, "end")
+        self.ip_entry.delete(0, "end")
+        self.status_label.configure(text="")
 
     def start_submit(self):
         domain_str = self.domain_entry.get().strip()
@@ -830,20 +860,27 @@ class UpdateIPDialog(ctk.CTkToplevel):
         input_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
         input_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
-        # Domains Input Textbox
-        ctk.CTkLabel(input_frame, text="Daftar Domain / Subdomain (Satu per baris):", font=self.bold_font).pack(anchor="w", padx=15, pady=(10, 2))
+        # Domains Input Header Bar with Action Buttons
+        domains_header_bar = ctk.CTkFrame(input_frame, fg_color="transparent")
+        domains_header_bar.pack(fill="x", padx=15, pady=(10, 2))
+        ctk.CTkLabel(domains_header_bar, text="Daftar Domain / Subdomain (Satu per baris):", font=self.bold_font).pack(side="left")
+
+        ctk.CTkButton(domains_header_bar, text="🗑️ Hapus Text", width=85, height=22, font=self.custom_font, command=self.clear_input_text, fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(domains_header_bar, text="📥 Ambil dari Antrian", width=125, height=22, font=self.custom_font, command=self.load_from_queue, fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+
         self.domains_input = ctk.CTkTextbox(input_frame, height=95, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
         self.domains_input.pack(fill="x", padx=15, pady=(0, 8))
 
+        # Only insert if prefill_domain was specifically passed (e.g. from right-click)
         if self.prefill_domain:
             self.domains_input.insert("1.0", self.prefill_domain)
-        elif self.parent and hasattr(self.parent, 'domains_data') and self.parent.domains_data:
-            pending_doms = [d['domain'] for d in self.parent.domains_data if d.get('domain')]
-            if pending_doms:
-                self.domains_input.insert("1.0", "\n".join(pending_doms))
 
-        # Target IP Entry
-        ctk.CTkLabel(input_frame, text="Target IPv4 Address Baru:", font=self.bold_font).pack(anchor="w", padx=15, pady=(0, 2))
+        # Target IP Entry Header Bar
+        ip_header_bar = ctk.CTkFrame(input_frame, fg_color="transparent")
+        ip_header_bar.pack(fill="x", padx=15, pady=(0, 2))
+        ctk.CTkLabel(ip_header_bar, text="Target IPv4 Address Baru:", font=self.bold_font).pack(side="left")
+        ctk.CTkButton(ip_header_bar, text="Hapus IP", width=65, height=20, font=self.custom_font, command=lambda: self.ip_entry.delete(0, "end"), fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+
         self.ip_entry = ctk.CTkEntry(input_frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
         self.ip_entry.pack(fill="x", padx=15, pady=(0, 8))
 
@@ -879,6 +916,24 @@ class UpdateIPDialog(ctk.CTkToplevel):
 
         self.btn_cancel = ctk.CTkButton(btn_bar, text="Batal / Tutup", font=self.custom_font, command=self.destroy, fg_color="#2D2D2D", hover_color="#353535", width=95, height=32, corner_radius=8)
         self.btn_cancel.pack(side="right")
+
+    def clear_input_text(self):
+        self.domains_input.delete("1.0", "end")
+        self.status_lbl.configure(text="Daftar domain berhasil dikosongkan.")
+
+    def load_from_queue(self):
+        if self.parent and hasattr(self.parent, 'domains_data') and self.parent.domains_data:
+            pending_doms = [d['domain'] for d in self.parent.domains_data if d.get('status') != 'Success' and d.get('domain')]
+            if not pending_doms:
+                pending_doms = [d['domain'] for d in self.parent.domains_data if d.get('domain')]
+            if pending_doms:
+                self.domains_input.delete("1.0", "end")
+                self.domains_input.insert("1.0", "\n".join(pending_doms))
+                self.status_lbl.configure(text=f"Berhasil mengambil {len(pending_doms)} domain dari antrian.")
+            else:
+                messagebox.showinfo("Info", "Tidak ada domain di antrian utama.", parent=self)
+        else:
+            messagebox.showinfo("Info", "Antrian utama kosong.", parent=self)
 
     def start_process(self):
         if self.is_processing:
@@ -918,28 +973,38 @@ class UpdateIPDialog(ctk.CTkToplevel):
             self.after(0, lambda idx=i+1, d=dom: self.status_lbl.configure(text=f"Memproses ({idx}/{total}): {d} -> {ip_str} ..."))
             self.after(0, lambda idx=i+1: self.progress_bar.set(idx / total))
 
-            prof_name, api, zone_id, zone_name, ns_list, err_msg = find_zone_across_profiles(self.config, dom)
+            try:
+                prof_name, api, zone_id, zone_name, ns_list, err_msg = find_zone_across_profiles(self.config, dom)
 
-            if not zone_id:
+                if not zone_id:
+                    failed_count += 1
+                    app_logger.error(f"[{dom}] Gagal Ubah IP: {err_msg or 'Domain tidak ditemukan di profil CF manapun.'}")
+                    if update_queue:
+                        self.after(0, lambda d=dom, p=ip_str, pr=prof_name or '', e=err_msg or 'Zone tidak ditemukan':
+                                   self._update_queue_item(d, p, pr, 'Failed', '', e))
+                    continue
+
+                success, msg = api.upsert_dns_record(zone_id, "A", dom, ip_str, proxied=proxied)
+
+                ns_string = ", ".join(ns_list) if ns_list else ""
+                if success:
+                    success_count += 1
+                    app_logger.info(f"[{dom}] IP berhasil diubah ke {ip_str} di profil CF '{prof_name}'.")
+                    if update_queue:
+                        self.after(0, lambda d=dom, p=ip_str, pr=prof_name, ns=ns_string:
+                                   self._update_queue_item(d, p, pr, 'Success', ns, ''))
+                else:
+                    failed_count += 1
+                    app_logger.error(f"[{dom}] Gagal Ubah IP via '{prof_name}': {msg}")
+                    if update_queue:
+                        self.after(0, lambda d=dom, p=ip_str, pr=prof_name, ns=ns_string, m=msg:
+                                   self._update_queue_item(d, p, pr, 'Failed', ns, m))
+            except Exception as ex:
                 failed_count += 1
-                app_logger.error(f"[{dom}] Gagal Ubah IP: {err_msg or 'Domain tidak ditemukan di profil CF manapun.'}")
+                app_logger.error(f"[{dom}] Error tidak terduga saat ubah IP: {ex}")
                 if update_queue:
-                    self._update_queue_item(dom, ip_str, prof_name or '', 'Failed', '', err_msg or 'Zone tidak ditemukan')
-                continue
-
-            success, msg = api.upsert_dns_record(zone_id, "A", dom, ip_str, proxied=proxied)
-
-            ns_string = ", ".join(ns_list) if ns_list else ""
-            if success:
-                success_count += 1
-                app_logger.info(f"[{dom}] IP berhasil diubah ke {ip_str} di profil CF '{prof_name}'.")
-                if update_queue:
-                    self._update_queue_item(dom, ip_str, prof_name, 'Success', ns_string, '')
-            else:
-                failed_count += 1
-                app_logger.error(f"[{dom}] Gagal Ubah IP via '{prof_name}': {msg}")
-                if update_queue:
-                    self._update_queue_item(dom, ip_str, prof_name, 'Failed', ns_string, msg)
+                    self.after(0, lambda d=dom, p=ip_str, m=str(ex):
+                               self._update_queue_item(d, p, '', 'Failed', '', m))
 
             time.sleep(0.5)
 
@@ -968,6 +1033,8 @@ class UpdateIPDialog(ctk.CTkToplevel):
                 'error': err_msg
             })
         export_utils.save_state(self.domains_data)
+        if callable(self.on_success_callback):
+            self.on_success_callback()
 
     def finish_process(self, total, success_count, failed_count):
         self.is_processing = False
@@ -1105,11 +1172,20 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
 
         ctk.CTkButton(bottom_frame, text="📋 Copy Semua Hasil", font=self.custom_font, command=self.copy_all_results, fg_color="#2D2D2D", hover_color="#353535", width=130, height=30, corner_radius=8).pack(side="left", padx=(0, 5))
         ctk.CTkButton(bottom_frame, text="💾 Export CSV", font=self.custom_font, command=self.export_csv, fg_color="#2D2D2D", hover_color="#353535", width=110, height=30, corner_radius=8).pack(side="left", padx=5)
+        ctk.CTkButton(bottom_frame, text="🗑️ Hapus Hasil", font=self.custom_font, command=self.clear_results, fg_color="#2D2D2D", hover_color="#353535", width=105, height=30, corner_radius=8).pack(side="left", padx=5)
 
         ctk.CTkButton(bottom_frame, text="Tutup", font=self.custom_font, command=self.destroy, fg_color="#4B5563", hover_color="#374151", width=80, height=30, corner_radius=8).pack(side="right")
 
     def clear_input(self):
         self.domains_input.delete("1.0", "end")
+        self.status_lbl.configure(text="Input domain telah dibersihkan.")
+
+    def clear_results(self):
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        self.results_data.clear()
+        self.status_lbl.configure(text="Tabel hasil telah dibersihkan.")
+        self.progress_bar.set(0)
 
     def start_check_thread(self):
         if self.is_checking:
@@ -1251,16 +1327,39 @@ class App(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title(f"Cloudflare Bulk Domain Tool v{update_checker.CURRENT_VERSION}")
+        self.title(f"FlarePilot v{update_checker.CURRENT_VERSION} - Cloudflare Domain Manager")
+        
+        # Set window & taskbar icon
+        try:
+            icon_file = get_resource_path("app_icon.ico")
+            if os.path.exists(icon_file):
+                self.iconbitmap(icon_file)
+        except Exception as e:
+            app_logger.debug(f"Could not set window icon: {e}")
+            
         self.geometry("1150x740")
         self.minsize(1024, 650)
         self.configure(fg_color="#202020")
         
         self.config = config_manager.load_config()
-        self.domains_data = export_utils.load_state()
+        
+        # Load state with cache clean options
+        raw_state = export_utils.load_state()
+        if self.config.get("clear_queue_on_close", False):
+            self.domains_data = []
+            export_utils.clear_state()
+        elif self.config.get("clear_done_on_close", True):
+            # Otomatis bersihkan domain yang sudah 'Success' agar tidak menjadi cache nyangkut saat dibuka lagi
+            self.domains_data = [d for d in raw_state if d.get('status') != 'Success']
+            if len(self.domains_data) != len(raw_state):
+                export_utils.save_state(self.domains_data)
+        else:
+            self.domains_data = raw_state
+
         self.queue_manager = None
         
         app_logger.set_gui_callback(self.append_log)
+        self.protocol("WM_DELETE_WINDOW", self.on_app_closing)
         
         self.build_ui()
         self.update_domains_listbox()
@@ -1341,12 +1440,26 @@ class App(ctk.CTk):
         
         self.on_profile_change(self.profile_var.get())
         
-        ctk.CTkLabel(left_frame, text="Domains (One per line, or domain, ip)", font=self.custom_font).pack(pady=(10, 0), padx=10, anchor="w")
+        dom_head_frame = ctk.CTkFrame(left_frame, fg_color="transparent")
+        dom_head_frame.pack(fill="x", pady=(10, 0), padx=10)
+        ctk.CTkLabel(dom_head_frame, text="Domains (One per line, or domain, ip)", font=self.custom_font).pack(side="left")
+        ctk.CTkButton(dom_head_frame, text="Hapus Text", font=self.custom_font, width=70, height=20, command=lambda: self.domains_text.delete("1.0", "end"), fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+
         self.domains_text = ctk.CTkTextbox(left_frame, height=120, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
         self.domains_text.pack(fill="both", expand=True, padx=10, pady=5)
         
         # Add domains button
-        ctk.CTkButton(left_frame, text="Load Domains to Queue", font=self.bold_font, height=34, command=self.load_domains, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(fill="x", padx=10, pady=(10, 15))
+        ctk.CTkButton(left_frame, text="Load Domains to Queue", font=self.bold_font, height=34, command=self.load_domains, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(fill="x", padx=10, pady=(6, 8))
+
+        # Queue Persistence & Cache Cleanup Options
+        cache_opts_frame = ctk.CTkFrame(left_frame, fg_color="#222222", corner_radius=6)
+        cache_opts_frame.pack(fill="x", padx=10, pady=(0, 10))
+
+        self.clear_done_var = tk.BooleanVar(value=self.config.get("clear_done_on_close", True))
+        ctk.CTkCheckBox(cache_opts_frame, text="Hapus status 'Success' saat exit", font=ctk.CTkFont(family="Segoe UI", size=10), variable=self.clear_done_var, command=self.save_queue_settings).pack(anchor="w", padx=8, pady=(5, 2))
+
+        self.clear_all_on_close_var = tk.BooleanVar(value=self.config.get("clear_queue_on_close", False))
+        ctk.CTkCheckBox(cache_opts_frame, text="Kosongkan antrian saat exit", font=ctk.CTkFont(family="Segoe UI", size=10), variable=self.clear_all_on_close_var, command=self.save_queue_settings).pack(anchor="w", padx=8, pady=(2, 5))
         
         # Right Panel (List and Logs)
         right_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
@@ -1392,6 +1505,7 @@ class App(ctk.CTk):
 
         ctk.CTkButton(row2_frame, text="Clear Queue", font=self.custom_font, command=self.clear_queue, width=90, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
         ctk.CTkButton(row2_frame, text="Hapus Selesai", font=self.custom_font, command=self.clear_done_queue, width=95, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
+        ctk.CTkButton(row2_frame, text="🧹 Reset Cache", font=self.custom_font, command=self.reset_all_cache, width=100, height=28, fg_color="#8A1A23", hover_color="#A11E29", text_color="#FFFFFF", corner_radius=8).pack(side="left", padx=5)
 
         ctk.CTkButton(row2_frame, text="Show NS", font=self.custom_font, command=self.show_ns_summary, width=80, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=(5, 0))
         ctk.CTkButton(row2_frame, text="Export CSV", font=self.custom_font, command=self.export_csv, width=85, height=28, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", text_color="#FFFFFF", corner_radius=8).pack(side="right", padx=5)
@@ -1615,9 +1729,8 @@ class App(ctk.CTk):
         center_window_over_parent(dialog, self, 680, 640)
 
     def open_redirect_rules_dialog_for_domain(self, domain):
-        dialog = RedirectRulesDialog(parent=self, config=self.config)
-        dialog.rules_text.insert("1.0", f"{domain}/jamp, https://masuk2.klikaja.online/register\n")
-        center_window_over_parent(dialog, self, 680, 640)
+        dialog = RedirectRulesDialog(parent=self, config=self.config, initial_domain=domain)
+        center_window_over_parent(dialog, self, 780, 820)
 
     def copy_to_clipboard(self, text):
         self.clipboard_clear()
@@ -1638,10 +1751,15 @@ class App(ctk.CTk):
             self.global_key_entry.pack(fill="x", padx=10, pady=5, before=self.ip_entry)
 
     def append_log(self, msg):
-        self.log_text.configure(state="normal")
-        self.log_text.insert("end", msg + "\n")
-        self.log_text.see("end")
-        self.log_text.configure(state="disabled")
+        def _do_append():
+            try:
+                self.log_text.configure(state="normal")
+                self.log_text.insert("end", msg + "\n")
+                self.log_text.see("end")
+                self.log_text.configure(state="disabled")
+            except Exception:
+                pass
+        self.after(0, _do_append)
         
     def save_current_config(self):
         profile_name = self.profile_var.get()
@@ -2045,6 +2163,48 @@ class App(ctk.CTk):
             export_utils.save_state(self.domains_data)
             self.update_domains_listbox()
             app_logger.info(f"{len(done_items)} domain berstatus Success telah dihapus dari antrian.")
+
+    def save_queue_settings(self):
+        self.config["clear_done_on_close"] = self.clear_done_var.get()
+        self.config["clear_queue_on_close"] = self.clear_all_on_close_var.get()
+        config_manager.save_config(self.config)
+
+    def reset_all_cache(self):
+        if not self.domains_data and not self.domains_text.get("1.0", "end").strip():
+            messagebox.showinfo("Info", "Antrian dan cache sudah bersih.", parent=self)
+            return
+        if messagebox.askyesno("Konfirmasi Reset Cache", "Apakah Anda yakin ingin membersihkan semua antrian, riwayat sukses/gagal, file cache, dan log sesi?", parent=self):
+            self.domains_data = []
+            export_utils.clear_state()
+            self.update_domains_listbox()
+            self.domains_text.delete("1.0", "end")
+            self.log_text.configure(state="normal")
+            self.log_text.delete("1.0", "end")
+            self.log_text.configure(state="disabled")
+            app_logger.info("Semua antrian, riwayat, dan cache telah dibersihkan.")
+            messagebox.showinfo("Berhasil", "Semua cache dan antrian berhasil dikosongkan.", parent=self)
+
+    def on_app_closing(self):
+        if self.queue_manager and self.queue_manager.is_running:
+            if not messagebox.askyesno("Konfirmasi Keluar", "Proses antrian masih berjalan. Yakin ingin menghentikan dan keluar?", parent=self):
+                return
+            self.queue_manager.stop()
+
+        self.save_current_config()
+
+        clear_all = self.clear_all_on_close_var.get() if hasattr(self, 'clear_all_on_close_var') else self.config.get("clear_queue_on_close", False)
+        clear_done = self.clear_done_var.get() if hasattr(self, 'clear_done_var') else self.config.get("clear_done_on_close", True)
+
+        if clear_all:
+            export_utils.clear_state()
+        elif clear_done:
+            # Otomatis buang item yang sudah 'Success' agar tidak menjadi cache nyangkut saat dibuka lagi
+            remaining = [d for d in self.domains_data if d.get('status') != 'Success']
+            export_utils.save_state(remaining)
+        else:
+            export_utils.save_state(self.domains_data)
+
+        self.destroy()
 
     def export_csv(self):
         if not self.domains_data:

@@ -34,7 +34,9 @@ def make_fresh_package():
     ]
     
     for fname in files_to_copy:
-        src = os.path.join(base_dir, fname)
+        src = os.path.join(base_dir, "src", fname)
+        if not os.path.exists(src):
+            src = os.path.join(base_dir, fname)
         dst = os.path.join(fresh_dir, fname)
         if os.path.exists(src):
             shutil.copy2(src, dst)

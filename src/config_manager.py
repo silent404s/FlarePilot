@@ -19,6 +19,8 @@ DEFAULT_CONFIG = {
     "max_retries": 3,
     "timeout": 30,
     "auto_check_updates": True,
+    "clear_done_on_close": True,
+    "clear_queue_on_close": False,
     "update_url": "https://raw.githubusercontent.com/silent404s/cloudflare-domain-manager/main/src/version.json"
 }
 

@@ -3,11 +3,11 @@
 ; Membuat Installer Resmi (.exe Setup Wizard) untuk Windows
 ; =====================================================================
 
-#define MyAppName "Cloudflare Bulk Domain Tool"
-#define MyAppVersion "1.3.1"
+#define MyAppName "FlarePilot"
+#define MyAppVersion "1.3.2"
 #define MyAppPublisher "Skylark"
 #define MyAppURL "https://github.com/silent404s/cloudflare-domain-manager"
-#define MyAppExeName "Cloudflare Bulk Domain Tool.exe"
+#define MyAppExeName "FlarePilot.exe"
 
 [Setup]
 ; Identifikasi Aplikasi (AppId unik untuk penanganan update/uninstall Windows)
@@ -33,7 +33,7 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
 SolidCompression=yes
 OutputDir=..\Output
-OutputBaseFilename=CloudflareBulkDomain_Setup_v{#MyAppVersion}
+OutputBaseFilename=FlarePilot_Setup_v{#MyAppVersion}
 WizardStyle=modern
 
 ; Hak Akses Instalasi (Memungkinkan install tanpa butuh akun Administrator)
@@ -42,7 +42,7 @@ PrivilegesRequiredOverridesAllowed=dialog
 
 ; Otomatis Menutup Aplikasi Lama Jika Sedang Berjalan Saat Update
 CloseApplications=yes
-CloseApplicationsFilter=*Cloudflare Bulk Domain Tool*.exe
+CloseApplicationsFilter=*FlarePilot*.exe
 
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
@@ -75,6 +75,6 @@ var
 begin
   Result := True;
   // Automatically terminate any running instance of the application before updating/replacing files
-  Exec('taskkill.exe', '/F /T /IM "Cloudflare Bulk Domain Tool.exe"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Exec('taskkill.exe', '/F /T /IM "FlarePilot.exe"', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
 end;
 
