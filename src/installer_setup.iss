@@ -4,7 +4,7 @@
 ; =====================================================================
 
 #define MyAppName "FlarePilot"
-#define MyAppVersion "1.3.2"
+#define MyAppVersion "1.3.3"
 #define MyAppPublisher "Skylark"
 #define MyAppURL "https://github.com/silent404s/cloudflare-domain-manager"
 #define MyAppExeName "FlarePilot.exe"

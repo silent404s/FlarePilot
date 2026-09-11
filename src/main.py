@@ -1335,7 +1335,7 @@ class App(ctk.CTk):
         # Set window & taskbar icon (use PNG for high-res clarity)
         try:
             import ctypes
-            myappid = 'skylark.flarepilot.manager.1.3.2'
+            myappid = 'skylark.flarepilot.manager.1.3.3'
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass

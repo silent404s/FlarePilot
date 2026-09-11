@@ -1,8 +1,8 @@
 {
-    "version": "1.3.2",
-    "download_url": "https://github.com/silent404s/cloudflare-domain-manager/raw/main/Output/FlarePilot_Setup_v1.3.2.exe",
-    "html_url": "https://github.com/silent404s/cloudflare-domain-manager/releases",
-    "release_notes": "✨ Versi 1.3.2 Rilis Pembaruan (FlarePilot):\n- Rebranding nama aplikasi menjadi FlarePilot dengan logo baru modern\n- Perbaikan bug bulk ubah IP agar memproses seluruh domain tanpa stuck\n- Pembersihan cache otomatis (riwayat domain 'Success' dibersihkan saat exit aplikasi)\n- Form Ubah IP terbuka dalam keadaan bersih tanpa nyangkut data lama\n- Tombol Reset Cache & Hapus Form pada setiap dialog"
+    "version": "1.3.3",
+    "download_url": "https://github.com/silent404s/cloudflare-domain-manager/raw/main/Output/FlarePilot_Setup_v1.3.3.exe",
+    "force_update": false,
+    "release_notes": "✨ Versi 1.3.3 (FlarePilot UI Update):\n- Perbaikan kontras teks pada kolom input dan riwayat program agar selalu putih terang.\n- Pembersihan tombol lama yang tidak berfungsi.\n- Perbaikan resolusi Treeview (tabel) yang terpotong pada layar High-DPI.\n- Efek hover interaktif ditambahkan ke baris tabel dan header kolom.\n- Pemuatan ikon PNG High-Res untuk mengatasi masalah blur di Taskbar Windows."
 }
 
 
