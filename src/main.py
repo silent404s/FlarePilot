@@ -89,7 +89,7 @@ class ShowErrorDialog(ctk.CTkToplevel):
         self.title(f"⚠️ Detail Error - {domain}")
         self.geometry("540x380")
         self.resizable(True, True)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
 
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=12, weight="bold")
@@ -100,15 +100,15 @@ class ShowErrorDialog(ctk.CTkToplevel):
         self.grab_set()
 
     def build_ui(self):
-        header = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        header = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         header.pack(fill="x", padx=15, pady=(15, 10))
 
         ctk.CTkLabel(header, text=f"⚠️ Detail Error: {self.domain}", font=self.bold_font, text_color="#F87171").pack(anchor="w", padx=15, pady=10)
 
-        content_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        content_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         content_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
-        textbox = ctk.CTkTextbox(content_frame, font=self.log_font, fg_color="#1E1E1E", text_color="#FCA5A5", border_color="#444444", border_width=1, corner_radius=6)
+        textbox = ctk.CTkTextbox(content_frame, font=self.log_font, fg_color="#1E293B", text_color="#FCA5A5", border_color="#334155", border_width=1, corner_radius=6)
         textbox.pack(fill="both", expand=True, padx=10, pady=10)
         textbox.insert("1.0", self.error_msg)
         textbox.configure(state="disabled")
@@ -117,7 +117,7 @@ class ShowErrorDialog(ctk.CTkToplevel):
         btn_bar.pack(fill="x", padx=15, pady=(0, 15))
 
         ctk.CTkButton(btn_bar, text="📋 Copy Text Error", font=self.bold_font, command=self.copy_error, fg_color="#0284C7", hover_color="#0369A1", width=140, height=32, corner_radius=8).pack(side="left")
-        ctk.CTkButton(btn_bar, text="Tutup", font=self.custom_font, command=self.destroy, fg_color="#2D2D2D", hover_color="#353535", width=90, height=32, corner_radius=8).pack(side="right")
+        ctk.CTkButton(btn_bar, text="Tutup", font=self.custom_font, command=self.destroy, fg_color="#1E293B", hover_color="#0F172A", width=90, height=32, corner_radius=8).pack(side="right")
 
     def copy_error(self):
         self.clipboard_clear()
@@ -134,7 +134,7 @@ class AddProfileDialog(ctk.CTkToplevel):
         
         self.title("Tambah Profil Cloudflare Baru")
         self.resizable(False, False)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
         
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
@@ -146,12 +146,12 @@ class AddProfileDialog(ctk.CTkToplevel):
     def build_ui(self):
         ctk.CTkLabel(self, text="Tambah Profil Cloudflare Baru", font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold")).pack(pady=(15, 10))
         
-        frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
         
         # Profile Name
         ctk.CTkLabel(frame, text="Nama Profil / Label Akun:", font=self.custom_font).pack(anchor="w", padx=15, pady=(10, 2))
-        self.name_entry = ctk.CTkEntry(frame, placeholder_text="contoh: Akun CF 2, Domain Utama, dll", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.name_entry = ctk.CTkEntry(frame, placeholder_text="contoh: Akun CF 2, Domain Utama, dll", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         self.name_entry.pack(fill="x", padx=15, pady=(0, 10))
         
         # Auth Method Selection
@@ -166,17 +166,17 @@ class AddProfileDialog(ctk.CTkToplevel):
         self.input_frame = ctk.CTkFrame(frame, fg_color="transparent")
         self.input_frame.pack(fill="x", padx=15, pady=5)
         
-        self.token_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Cloudflare API Token", show="*", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.token_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Cloudflare API Token", show="*", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         self.token_entry.pack(fill="x", pady=4)
         
-        self.email_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Cloudflare Email", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
-        self.global_key_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Global API Key", show="*", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.email_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Cloudflare Email", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
+        self.global_key_entry = ctk.CTkEntry(self.input_frame, placeholder_text="Global API Key", show="*", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         
         # Buttons
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=15, pady=(15, 10))
         
-        ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#2D2D2D", hover_color="#353535", command=self.destroy, corner_radius=8).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#1E293B", hover_color="#0F172A", command=self.destroy, corner_radius=8).pack(side="right", padx=(5, 0))
         ctk.CTkButton(btn_frame, text="Simpan Profil", font=self.bold_font, width=130, fg_color="#0284C7", hover_color="#0369A1", command=self.save_profile, corner_radius=8).pack(side="right")
 
     def toggle_auth(self):
@@ -240,7 +240,7 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         self.title("Cloudflare Redirect Rules Manager")
         self.geometry("780x820")
         self.minsize(720, 750)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
         
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
@@ -259,18 +259,18 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         btn_frame = ctk.CTkFrame(self, fg_color="transparent")
         btn_frame.pack(side="bottom", fill="x", padx=15, pady=(0, 12))
         
-        self.btn_cancel = ctk.CTkButton(btn_frame, text="Tutup", font=self.custom_font, width=95, height=34, fg_color="#2D2D2D", hover_color="#353535", command=self.destroy, corner_radius=8)
+        self.btn_cancel = ctk.CTkButton(btn_frame, text="Tutup", font=self.custom_font, width=95, height=34, fg_color="#1E293B", hover_color="#0F172A", command=self.destroy, corner_radius=8)
         self.btn_cancel.pack(side="right", padx=(8, 0))
         
         self.btn_submit = ctk.CTkButton(btn_frame, text="⚡ Mulai Buat / Update Rules", font=self.bold_font, width=220, height=34, fg_color="#7C3AED", hover_color="#6D28D9", command=self.start_process, corner_radius=8)
         self.btn_submit.pack(side="right")
 
         # 2. Main Frame Fills Available Space Above Action Buttons
-        main_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        main_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         main_frame.pack(side="top", fill="both", expand=True, padx=12, pady=(0, 8))
         
         # Profile / Token Selector Section
-        token_frame = ctk.CTkFrame(main_frame, fg_color="#1E1E1E", corner_radius=6)
+        token_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
         token_frame.pack(fill="x", padx=10, pady=(8, 4))
         
         ctk.CTkLabel(token_frame, text="Pilih Profil CF / Token untuk Memproses Rules:", font=self.bold_font, text_color="#A78BFA").pack(anchor="w", padx=10, pady=(5, 1))
@@ -286,7 +286,7 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         self.profile_dropdown = ctk.CTkOptionMenu(token_frame, variable=self.profile_select_var, values=profile_options, font=self.custom_font, corner_radius=6)
         self.profile_dropdown.pack(fill="x", padx=10, pady=(0, 4))
 
-        self.token_entry = ctk.CTkEntry(token_frame, placeholder_text="Atau Tempelkan Token CF Khusus di sini jika memilih 'Gunakan Token CF Khusus'...", show="*", font=self.custom_font, fg_color="#282828", border_color="#444444")
+        self.token_entry = ctk.CTkEntry(token_frame, placeholder_text="Atau Tempelkan Token CF Khusus di sini jika memilih 'Gunakan Token CF Khusus'...", show="*", font=self.custom_font, fg_color="#111827", border_color="#334155")
         self.token_entry.pack(fill="x", padx=10, pady=(0, 6))
         
         saved_rules_token = self.config.get("rules_custom_token", "")
@@ -294,7 +294,7 @@ class RedirectRulesDialog(ctk.CTkToplevel):
             self.token_entry.insert(0, saved_rules_token)
 
         # Root Rule Settings Section
-        root_frame = ctk.CTkFrame(main_frame, fg_color="#1E1E1E", corner_radius=6)
+        root_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
         root_frame.pack(fill="x", padx=10, pady=4)
         
         self.root_enabled_var = tk.BooleanVar(value=True)
@@ -305,17 +305,17 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         root_input_frame.pack(fill="x", padx=10, pady=(0, 6))
         
         ctk.CTkLabel(root_input_frame, text="Target URL Root (Tujuan Wajib):", font=self.custom_font).pack(side="left", padx=(0, 5))
-        self.root_url_entry = ctk.CTkEntry(root_input_frame, placeholder_text="https://www.youtube.com/", font=self.custom_font, fg_color="#282828", border_color="#444444")
+        self.root_url_entry = ctk.CTkEntry(root_input_frame, placeholder_text="https://www.youtube.com/", font=self.custom_font, fg_color="#111827", border_color="#334155")
         self.root_url_entry.pack(side="left", fill="x", expand=True)
         self.root_url_entry.insert(0, "https://www.youtube.com/")
 
         # Path Rules Search & Input Section
-        search_frame = ctk.CTkFrame(main_frame, fg_color="#1E1E1E", corner_radius=6)
+        search_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
         search_frame.pack(fill="x", padx=10, pady=(4, 2))
         
         ctk.CTkLabel(search_frame, text="🔍 Cari Path Rule untuk Ubah Tujuan:", font=self.bold_font, text_color="#38BDF8").pack(side="left", padx=(10, 5), pady=4)
         
-        self.search_entry = ctk.CTkEntry(search_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#282828", border_color="#444444")
+        self.search_entry = ctk.CTkEntry(search_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#111827", border_color="#334155")
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 6), pady=4)
         
         btn_search = ctk.CTkButton(search_frame, text="🔍 Cari Rule", font=self.bold_font, width=100, height=26, fg_color="#0284C7", hover_color="#0369A1", command=self.search_single_rule, corner_radius=6)
@@ -327,11 +327,11 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         ctk.CTkLabel(rules_header_frame, text="Form Buat / Edit Path Rules (Order: First, 302, Preserve Query: ON):", font=self.bold_font).pack(side="left")
 
         # Scrollable Frame for 2-column rows
-        self.scroll_frame = ctk.CTkScrollableFrame(main_frame, fg_color="#1E1E1E", height=135, corner_radius=6)
+        self.scroll_frame = ctk.CTkScrollableFrame(main_frame, fg_color="#1E293B", height=135, corner_radius=6)
         self.scroll_frame.pack(fill="x", padx=10, pady=2)
         
         # Header inside scroll frame
-        col_header = ctk.CTkFrame(self.scroll_frame, fg_color="#282828", height=26)
+        col_header = ctk.CTkFrame(self.scroll_frame, fg_color="#111827", height=26)
         col_header.pack(fill="x", pady=(0, 4))
         ctk.CTkLabel(col_header, text="Domain + Path (contoh: domain.com/path)", font=self.bold_font, width=280).pack(side="left", padx=5)
         ctk.CTkLabel(col_header, text="Target URL Tujuan (contoh: https://tujuan.com/landing)", font=self.bold_font).pack(side="left", padx=5)
@@ -340,7 +340,7 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         row_btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
         row_btn_frame.pack(fill="x", padx=10, pady=4)
         
-        ctk.CTkButton(row_btn_frame, text="+ Tambah Baris Rule", font=self.custom_font, width=130, height=26, command=self.add_rule_row, fg_color="#2D2D2D", hover_color="#353535", border_width=1, border_color="#3D3D3D", corner_radius=6).pack(side="left")
+        ctk.CTkButton(row_btn_frame, text="+ Tambah Baris Rule", font=self.custom_font, width=130, height=26, command=self.add_rule_row, fg_color="#1E293B", hover_color="#0F172A", border_width=1, border_color="#3D3D3D", corner_radius=6).pack(side="left")
         ctk.CTkButton(row_btn_frame, text="Clear Semua Baris", font=self.custom_font, width=120, height=26, command=self.clear_all_rows, fg_color="#8A1A23", hover_color="#A11E29", corner_radius=6).pack(side="left", padx=8)
 
         # Add initial clean default rows
@@ -354,7 +354,7 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         self.progress = ctk.CTkProgressBar(main_frame, variable=self.progress_var)
         self.progress.pack(fill="x", padx=10, pady=4)
         
-        self.log_box = ctk.CTkTextbox(main_frame, height=75, font=self.log_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=6)
+        self.log_box = ctk.CTkTextbox(main_frame, height=75, font=self.log_font, fg_color="#1E293B", border_color="#334155", border_width=1, corner_radius=6)
         self.log_box.pack(fill="x", padx=10, pady=(0, 6))
         self.log_box.configure(state="disabled")
 
@@ -362,12 +362,12 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         row_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
         row_frame.pack(fill="x", pady=2)
         
-        path_entry = ctk.CTkEntry(row_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#282828", border_color="#444444")
+        path_entry = ctk.CTkEntry(row_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#111827", border_color="#334155")
         path_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
         if domain_path:
             path_entry.insert(0, domain_path)
             
-        target_entry = ctk.CTkEntry(row_frame, placeholder_text="https://tujuan-custom.com/...", font=self.custom_font, fg_color="#282828", border_color="#444444")
+        target_entry = ctk.CTkEntry(row_frame, placeholder_text="https://tujuan-custom.com/...", font=self.custom_font, fg_color="#111827", border_color="#334155")
         target_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
         if target_url:
             target_entry.insert(0, target_url)
@@ -667,7 +667,7 @@ class AddSubdomainDialog(ctk.CTkToplevel):
         
         self.title("Tambah Subdomain Baru")
         self.resizable(False, False)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
         
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
@@ -679,12 +679,12 @@ class AddSubdomainDialog(ctk.CTkToplevel):
     def build_ui(self, prefill_domain):
         ctk.CTkLabel(self, text="Tambah Subdomain Baru", font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold")).pack(pady=(15, 10))
         
-        frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
         
         # Subdomain / Domain Entry
         ctk.CTkLabel(frame, text="Nama Subdomain / Full Domain:", font=self.custom_font).pack(anchor="w", padx=15, pady=(10, 2))
-        self.domain_entry = ctk.CTkEntry(frame, placeholder_text="contoh: sub.domain.com atau blog.domain.com", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.domain_entry = ctk.CTkEntry(frame, placeholder_text="contoh: sub.domain.com atau blog.domain.com", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         self.domain_entry.pack(fill="x", padx=15, pady=(0, 10))
         if prefill_domain:
             if not prefill_domain.startswith("sub.") and not prefill_domain.startswith("blog."):
@@ -695,7 +695,7 @@ class AddSubdomainDialog(ctk.CTkToplevel):
             
         # Target IP Entry
         ctk.CTkLabel(frame, text="Target IPv4 Address:", font=self.custom_font).pack(anchor="w", padx=15, pady=(0, 2))
-        self.ip_entry = ctk.CTkEntry(frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.ip_entry = ctk.CTkEntry(frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         self.ip_entry.pack(fill="x", padx=15, pady=(0, 10))
         
         parent_ip = self.parent.ip_entry.get().strip()
@@ -720,10 +720,10 @@ class AddSubdomainDialog(ctk.CTkToplevel):
         btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
         btn_frame.pack(fill="x", padx=15, pady=(5, 10))
         
-        self.btn_clear = ctk.CTkButton(btn_frame, text="Reset Form", font=self.custom_font, width=90, fg_color="#2D2D2D", hover_color="#353535", command=self.clear_form, corner_radius=8)
+        self.btn_clear = ctk.CTkButton(btn_frame, text="Reset Form", font=self.custom_font, width=90, fg_color="#1E293B", hover_color="#0F172A", command=self.clear_form, corner_radius=8)
         self.btn_clear.pack(side="left")
 
-        self.btn_cancel = ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#2D2D2D", hover_color="#353535", command=self.destroy, corner_radius=8)
+        self.btn_cancel = ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#1E293B", hover_color="#0F172A", command=self.destroy, corner_radius=8)
         self.btn_cancel.pack(side="right", padx=(5, 0))
         
         self.btn_submit = ctk.CTkButton(btn_frame, text="Cari & Buat Subdomain", font=self.bold_font, width=160, fg_color="#0284C7", hover_color="#0369A1", command=self.start_submit, corner_radius=8)
@@ -830,7 +830,7 @@ class UpdateIPDialog(ctk.CTkToplevel):
         self.title("⚡ Ubah IP Domain Cloudflare (Auto-Detect)")
         self.geometry("560x520")
         self.resizable(False, False)
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
 
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
@@ -842,7 +842,7 @@ class UpdateIPDialog(ctk.CTkToplevel):
 
     def build_ui(self):
         # Header Frame
-        header_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        header_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         header_frame.pack(fill="x", padx=15, pady=(15, 10))
 
         ctk.CTkLabel(
@@ -860,7 +860,7 @@ class UpdateIPDialog(ctk.CTkToplevel):
         ).pack(anchor="w", padx=15, pady=(0, 10))
 
         # Main Input Frame
-        input_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        input_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         input_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
         # Domains Input Header Bar with Action Buttons
@@ -868,10 +868,10 @@ class UpdateIPDialog(ctk.CTkToplevel):
         domains_header_bar.pack(fill="x", padx=15, pady=(10, 2))
         ctk.CTkLabel(domains_header_bar, text="Daftar Domain / Subdomain (Satu per baris):", font=self.bold_font).pack(side="left")
 
-        ctk.CTkButton(domains_header_bar, text="🗑️ Hapus Text", width=85, height=22, font=self.custom_font, command=self.clear_input_text, fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right", padx=(5, 0))
-        ctk.CTkButton(domains_header_bar, text="📥 Ambil dari Antrian", width=125, height=22, font=self.custom_font, command=self.load_from_queue, fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+        ctk.CTkButton(domains_header_bar, text="🗑️ Hapus Text", width=85, height=22, font=self.custom_font, command=self.clear_input_text, fg_color="#1E293B", hover_color="#0F172A", corner_radius=6).pack(side="right", padx=(5, 0))
+        ctk.CTkButton(domains_header_bar, text="📥 Ambil dari Antrian", width=125, height=22, font=self.custom_font, command=self.load_from_queue, fg_color="#1E293B", hover_color="#0F172A", corner_radius=6).pack(side="right")
 
-        self.domains_input = ctk.CTkTextbox(input_frame, height=95, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
+        self.domains_input = ctk.CTkTextbox(input_frame, height=95, font=self.custom_font, fg_color="#1E293B", border_color="#334155", border_width=1, corner_radius=8)
         self.domains_input.pack(fill="x", padx=15, pady=(0, 8))
 
         # Only insert if prefill_domain was specifically passed (e.g. from right-click)
@@ -882,9 +882,9 @@ class UpdateIPDialog(ctk.CTkToplevel):
         ip_header_bar = ctk.CTkFrame(input_frame, fg_color="transparent")
         ip_header_bar.pack(fill="x", padx=15, pady=(0, 2))
         ctk.CTkLabel(ip_header_bar, text="Target IPv4 Address Baru:", font=self.bold_font).pack(side="left")
-        ctk.CTkButton(ip_header_bar, text="Hapus IP", width=65, height=20, font=self.custom_font, command=lambda: self.ip_entry.delete(0, "end"), fg_color="#2D2D2D", hover_color="#353535", corner_radius=6).pack(side="right")
+        ctk.CTkButton(ip_header_bar, text="Hapus IP", width=65, height=20, font=self.custom_font, command=lambda: self.ip_entry.delete(0, "end"), fg_color="#1E293B", hover_color="#0F172A", corner_radius=6).pack(side="right")
 
-        self.ip_entry = ctk.CTkEntry(input_frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", corner_radius=8)
+        self.ip_entry = ctk.CTkEntry(input_frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
         self.ip_entry.pack(fill="x", padx=15, pady=(0, 8))
 
         parent_ip = self.parent.ip_entry.get().strip() if hasattr(self.parent, 'ip_entry') else ""
@@ -917,7 +917,7 @@ class UpdateIPDialog(ctk.CTkToplevel):
         self.btn_submit = ctk.CTkButton(btn_bar, text="⚡ Mulai Ubah IP (Auto-Detect CF)", font=self.bold_font, command=self.start_process, fg_color="#D97706", hover_color="#B45309", height=32, corner_radius=8)
         self.btn_submit.pack(side="left", padx=(0, 10))
 
-        self.btn_cancel = ctk.CTkButton(btn_bar, text="Batal / Tutup", font=self.custom_font, command=self.destroy, fg_color="#2D2D2D", hover_color="#353535", width=95, height=32, corner_radius=8)
+        self.btn_cancel = ctk.CTkButton(btn_bar, text="Batal / Tutup", font=self.custom_font, command=self.destroy, fg_color="#1E293B", hover_color="#0F172A", width=95, height=32, corner_radius=8)
         self.btn_cancel.pack(side="right")
 
     def clear_input_text(self):
@@ -1067,7 +1067,7 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
 
         self.title("🔍 Cek IP Domain & Akun Cloudflare")
         self.geometry("860x640")
-        self.configure(fg_color="#202020")
+        self.configure(fg_color="#0B0F19")
 
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
@@ -1082,7 +1082,7 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
 
     def build_ui(self):
         # Header Frame
-        header_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        header_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         header_frame.pack(fill="x", padx=15, pady=(15, 10))
 
         ctk.CTkLabel(
@@ -1100,12 +1100,12 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
         ).pack(anchor="w", padx=15, pady=(0, 10))
 
         # Main Input & Action Frame
-        input_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        input_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         input_frame.pack(fill="x", padx=15, pady=(0, 10))
 
         ctk.CTkLabel(input_frame, text="Daftar Domain (Contoh: domain.com, sub.domain.com):", font=self.bold_font).pack(anchor="w", padx=15, pady=(10, 2))
 
-        self.domains_input = ctk.CTkTextbox(input_frame, height=85, font=self.custom_font, fg_color="#1E1E1E", border_color="#444444", border_width=1, corner_radius=8)
+        self.domains_input = ctk.CTkTextbox(input_frame, height=85, font=self.custom_font, fg_color="#1E293B", border_color="#334155", border_width=1, corner_radius=8)
         self.domains_input.pack(fill="x", padx=15, pady=(0, 10))
 
         # Action Buttons for Input
@@ -1115,7 +1115,7 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
         self.btn_run = ctk.CTkButton(btn_bar, text="🚀 Mulai Cek IP & Profil CF", font=self.bold_font, command=self.start_check_thread, fg_color="#7C3AED", hover_color="#6D28D9", height=32, corner_radius=8)
         self.btn_run.pack(side="left", padx=(0, 10))
 
-        ctk.CTkButton(btn_bar, text="Hapus Text", font=self.custom_font, command=self.clear_input, fg_color="#2D2D2D", hover_color="#353535", width=90, height=32, corner_radius=8).pack(side="left")
+        ctk.CTkButton(btn_bar, text="Hapus Text", font=self.custom_font, command=self.clear_input, fg_color="#1E293B", hover_color="#0F172A", width=90, height=32, corner_radius=8).pack(side="left")
 
         # Progress Frame
         prog_frame = ctk.CTkFrame(self, fg_color="transparent")
@@ -1129,7 +1129,7 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
         self.progress_bar.set(0)
 
         # Results Table Frame
-        table_frame = ctk.CTkFrame(self, fg_color="#282828", corner_radius=8)
+        table_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
         table_frame.pack(fill="both", expand=True, padx=15, pady=(0, 10))
 
         columns = ("domain", "public_ip", "profile", "cf_dns_ip", "nameservers", "status")
@@ -1151,12 +1151,12 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
 
         style = tk.ttk.Style(self)
         style.theme_use("default")
-        style.configure("CheckIP.Treeview", background="#202020", fieldbackground="#202020", foreground="white", borderwidth=0, font=("Segoe UI", 10), rowheight=25)
+        style.configure("CheckIP.Treeview", background="#0B0F19", fieldbackground="#0B0F19", foreground="white", borderwidth=0, font=("Segoe UI", 10), rowheight=25)
         style.map('CheckIP.Treeview', background=[('selected', '#005FB8')])
-        style.configure("CheckIP.Treeview.Heading", background="#282828", foreground="white", relief="flat", font=("Segoe UI", 10, "bold"))
+        style.configure("CheckIP.Treeview.Heading", background="#111827", foreground="white", relief="flat", font=("Segoe UI", 10, "bold"))
         
-        self.tree.tag_configure("evenrow", background="#202020")
-        self.tree.tag_configure("oddrow", background="#282828")
+        self.tree.tag_configure("evenrow", background="#0B0F19")
+        self.tree.tag_configure("oddrow", background="#111827")
         self.tree.tag_configure("found", foreground="#34D399")
         self.tree.tag_configure("not_found", foreground="#F87171")
 
@@ -1173,9 +1173,9 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
         bottom_frame = ctk.CTkFrame(self, fg_color="transparent")
         bottom_frame.pack(fill="x", padx=15, pady=(0, 15))
 
-        ctk.CTkButton(bottom_frame, text="📋 Copy Semua Hasil", font=self.custom_font, command=self.copy_all_results, fg_color="#2D2D2D", hover_color="#353535", width=130, height=30, corner_radius=8).pack(side="left", padx=(0, 5))
-        ctk.CTkButton(bottom_frame, text="💾 Export CSV", font=self.custom_font, command=self.export_csv, fg_color="#2D2D2D", hover_color="#353535", width=110, height=30, corner_radius=8).pack(side="left", padx=5)
-        ctk.CTkButton(bottom_frame, text="🗑️ Hapus Hasil", font=self.custom_font, command=self.clear_results, fg_color="#2D2D2D", hover_color="#353535", width=105, height=30, corner_radius=8).pack(side="left", padx=5)
+        ctk.CTkButton(bottom_frame, text="📋 Copy Semua Hasil", font=self.custom_font, command=self.copy_all_results, fg_color="#1E293B", hover_color="#0F172A", width=130, height=30, corner_radius=8).pack(side="left", padx=(0, 5))
+        ctk.CTkButton(bottom_frame, text="💾 Export CSV", font=self.custom_font, command=self.export_csv, fg_color="#1E293B", hover_color="#0F172A", width=110, height=30, corner_radius=8).pack(side="left", padx=5)
+        ctk.CTkButton(bottom_frame, text="🗑️ Hapus Hasil", font=self.custom_font, command=self.clear_results, fg_color="#1E293B", hover_color="#0F172A", width=105, height=30, corner_radius=8).pack(side="left", padx=5)
 
         ctk.CTkButton(bottom_frame, text="Tutup", font=self.custom_font, command=self.destroy, fg_color="#4B5563", hover_color="#374151", width=80, height=30, corner_radius=8).pack(side="right")
 
@@ -1332,11 +1332,23 @@ class App(ctk.CTk):
         
         self.title(f"FlarePilot v{update_checker.CURRENT_VERSION} - Cloudflare Domain Manager")
         
-        # Set window & taskbar icon
+        # Set window & taskbar icon (use PNG for high-res clarity)
         try:
-            icon_file = get_resource_path("app_icon.ico")
-            if os.path.exists(icon_file):
-                self.iconbitmap(icon_file)
+            import ctypes
+            myappid = 'skylark.flarepilot.manager.1.3.2'
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        except Exception:
+            pass
+
+        try:
+            png_file = get_resource_path("app_icon.png")
+            if os.path.exists(png_file):
+                icon_img = tk.PhotoImage(file=png_file)
+                self.iconphoto(False, icon_img)
+            else:
+                icon_file = get_resource_path("app_icon.ico")
+                if os.path.exists(icon_file):
+                    self.iconbitmap(icon_file)
         except Exception as e:
             app_logger.debug(f"Could not set window icon: {e}")
             
@@ -1706,7 +1718,7 @@ class App(ctk.CTk):
         dialog = ctk.CTkToplevel(self)
         dialog.title(f"Edit Profil CF - {domain}")
         dialog.resizable(False, False)
-        dialog.configure(fg_color="#202020")
+        dialog.configure(fg_color="#0B0F19")
         center_window_over_parent(dialog, self, 350, 180)
         dialog.grab_set()
 
@@ -1727,7 +1739,7 @@ class App(ctk.CTk):
 
         btn_frame = ctk.CTkFrame(dialog, fg_color="transparent")
         btn_frame.pack(fill="x", padx=20, pady=(10, 15))
-        ctk.CTkButton(btn_frame, text="Batal", width=80, command=dialog.destroy, fg_color="#2D2D2D", hover_color="#353535").pack(side="right", padx=(5, 0))
+        ctk.CTkButton(btn_frame, text="Batal", width=80, command=dialog.destroy, fg_color="#1E293B", hover_color="#0F172A").pack(side="right", padx=(5, 0))
         ctk.CTkButton(btn_frame, text="Simpan", width=100, command=save_profile, fg_color="#0284C7", hover_color="#0369A1", font=self.bold_font).pack(side="right")
 
     def delete_single_domain(self, domain):
