@@ -11,6 +11,7 @@ app.log
 !Output/*.exe
 *.zip
 Cloudflare_Bulk_Domain_Tool_Fresh/
+IndexRadar/
 
 # Python Build & Caches
 __pycache__/

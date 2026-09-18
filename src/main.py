@@ -1151,7 +1151,7 @@ class CheckDomainIPDialog(ctk.CTkToplevel):
 
         style = tk.ttk.Style(self)
         style.theme_use("default")
-        style.configure("CheckIP.Treeview", background="#0B0F19", fieldbackground="#0B0F19", foreground="white", borderwidth=0, font=("Segoe UI", 10), rowheight=25)
+        style.configure("CheckIP.Treeview", background="#0B0F19", fieldbackground="#0B0F19", foreground="white", borderwidth=0, font=("Segoe UI", 10), rowheight=40)
         style.map('CheckIP.Treeview', background=[('selected', '#005FB8')])
         style.configure("CheckIP.Treeview.Heading", background="#111827", foreground="white", relief="flat", font=("Segoe UI", 10, "bold"))
         
