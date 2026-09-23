@@ -20,7 +20,7 @@ from cloudflare_api import CloudflareAPI, find_zone_across_profiles, check_domai
 
 try:
     # Set Windows App ID agar icon di taskbar & window konsisten
-    myappid = 'flarepilot.domainmanager.v1'
+    myappid = 'skylark.flarepilot.manager.1.3.4'
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
     
     # Aktifkan High DPI Awareness agar UI/Icon tajam (anti-blur)
@@ -1763,23 +1763,22 @@ class App(ctk.CTk):
         
         self.title(f"FlarePilot v{update_checker.CURRENT_VERSION} - Cloudflare Domain Manager")
         
-        # Set window & taskbar icon (use PNG for high-res clarity)
+        # Set window & taskbar icon
         try:
-            import ctypes
-            myappid = 'skylark.flarepilot.manager.1.3.4'
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        except Exception:
-            pass
+            # 1. Nonaktifkan timer auto-override icon bawaan CustomTkinter agar logo tidak tertimpa icon default CTk
+            self._windows_set_titlebar_icon = lambda: None
+            self._iconbitmap_method_called = True
 
-        try:
+            # 2. Pasang icon ICO multi-resolusi untuk taskbar dan window titlebar native Windows
+            ico_file = get_resource_path("app_icon.ico")
+            if os.path.exists(ico_file):
+                self.iconbitmap(ico_file)
+
+            # 3. Pasang icon PNG untuk render resolusi tinggi di window utama dan semua sub-dialog
             png_file = get_resource_path("app_icon.png")
             if os.path.exists(png_file):
-                icon_img = tk.PhotoImage(file=png_file)
-                self.iconphoto(False, icon_img)
-            else:
-                icon_file = get_resource_path("app_icon.ico")
-                if os.path.exists(icon_file):
-                    self.iconbitmap(icon_file)
+                self._app_icon_photo = tk.PhotoImage(file=png_file)
+                self.iconphoto(True, self._app_icon_photo)
         except Exception as e:
             app_logger.debug(f"Could not set window icon: {e}")
             
