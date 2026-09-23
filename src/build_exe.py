@@ -14,6 +14,7 @@ def build():
         "--name=FlarePilot",
         "--icon=app_icon.ico",
         "--add-data=app_icon.ico;.",
+        "--add-data=app_icon.png;.",
         "--distpath=../dist",
         "--workpath=../build",
         "--collect-all=customtkinter",

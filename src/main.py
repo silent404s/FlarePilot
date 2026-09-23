@@ -10,6 +10,7 @@ import traceback
 
 import ipaddress
 import time
+import re
 import config_manager
 import export_utils
 import update_checker
@@ -664,158 +665,588 @@ class AddSubdomainDialog(ctk.CTkToplevel):
         self.config = config
         self.domains_data = domains_data
         self.on_success_callback = on_success_callback
-        
-        self.title("Tambah Subdomain Baru")
-        self.resizable(False, False)
+        self.is_processing = False
+        self.should_stop = False
+
+        self.title("➕ Bulk Tambah Subdomain (Cloudflare)")
+        self.geometry("640x710")
+        self.minsize(580, 620)
         self.configure(fg_color="#0B0F19")
-        
+
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
-        
+        self.small_font = ctk.CTkFont(family="Segoe UI", size=10)
+        self.log_font = ctk.CTkFont(family="Consolas", size=10)
+
         self.build_ui(prefill_domain)
-        center_window_over_parent(self, parent, 480, 390)
+        center_window_over_parent(self, parent, 640, 710)
         self.grab_set()
-        
+
     def build_ui(self, prefill_domain):
-        ctk.CTkLabel(self, text="Tambah Subdomain Baru", font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold")).pack(pady=(15, 10))
-        
-        frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
-        frame.pack(fill="both", expand=True, padx=15, pady=(0, 15))
-        
-        # Subdomain / Domain Entry
-        ctk.CTkLabel(frame, text="Nama Subdomain / Full Domain:", font=self.custom_font).pack(anchor="w", padx=15, pady=(10, 2))
-        self.domain_entry = ctk.CTkEntry(frame, placeholder_text="contoh: sub.domain.com atau blog.domain.com", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
-        self.domain_entry.pack(fill="x", padx=15, pady=(0, 10))
+        # 1. Header Frame
+        header_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
+        header_frame.pack(fill="x", padx=15, pady=(15, 8))
+
+        ctk.CTkLabel(
+            header_frame,
+            text="➕ Bulk Tambah Subdomain (Cloudflare)",
+            font=ctk.CTkFont(family="Segoe UI", size=15, weight="bold"),
+            text_color="#38BDF8"
+        ).pack(anchor="w", padx=15, pady=(10, 2))
+
+        ctk.CTkLabel(
+            header_frame,
+            text="Buat DNS A-Record banyak subdomain sekaligus dengan auto-detect zone di seluruh profil Cloudflare.",
+            font=self.custom_font,
+            text_color="#A0A0A0"
+        ).pack(anchor="w", padx=15, pady=(0, 10))
+
+        # 2. Quick Prefix Generator Card (Optional helper)
+        gen_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
+        gen_frame.pack(fill="x", padx=15, pady=(0, 8))
+
+        gen_title_bar = ctk.CTkFrame(gen_frame, fg_color="transparent")
+        gen_title_bar.pack(fill="x", padx=15, pady=(8, 4))
+        ctk.CTkLabel(
+            gen_title_bar,
+            text="⚡ Quick Prefix Generator (Otomatis Buat Nama Subdomain):",
+            font=self.bold_font,
+            text_color="#F59E0B"
+        ).pack(side="left")
+
+        gen_input_row = ctk.CTkFrame(gen_frame, fg_color="transparent")
+        gen_input_row.pack(fill="x", padx=15, pady=(0, 10))
+
+        # Base Domain
+        base_col = ctk.CTkFrame(gen_input_row, fg_color="transparent")
+        base_col.pack(side="left", fill="x", expand=True, padx=(0, 5))
+        ctk.CTkLabel(base_col, text="Domain Induk (Root):", font=self.custom_font).pack(anchor="w", pady=(0, 2))
+        self.gen_base_entry = ctk.CTkEntry(
+            base_col,
+            placeholder_text="contoh: domain.com",
+            font=self.custom_font,
+            fg_color="#1E293B",
+            border_color="#334155",
+            corner_radius=8
+        )
+        self.gen_base_entry.pack(fill="x")
+
+        # Prefixes
+        pfx_col = ctk.CTkFrame(gen_input_row, fg_color="transparent")
+        pfx_col.pack(side="left", fill="x", expand=True, padx=(5, 5))
+        ctk.CTkLabel(pfx_col, text="Prefiks (misal: blog, app, api, s1..s5):", font=self.custom_font).pack(anchor="w", pady=(0, 2))
+        self.gen_prefixes_entry = ctk.CTkEntry(
+            pfx_col,
+            placeholder_text="blog, app, api, s1..s5",
+            font=self.custom_font,
+            fg_color="#1E293B",
+            border_color="#334155",
+            corner_radius=8
+        )
+        self.gen_prefixes_entry.pack(fill="x")
+
+        # Apply Button
+        btn_apply_pfx = ctk.CTkButton(
+            gen_input_row,
+            text="+ Terapkan",
+            width=90,
+            height=28,
+            font=self.bold_font,
+            command=self.apply_prefix_generator,
+            fg_color="#0284C7",
+            hover_color="#0369A1",
+            corner_radius=8
+        )
+        btn_apply_pfx.pack(side="right", padx=(5, 0), pady=(18, 0))
+
+        # 3. Main Subdomain List Input Card
+        input_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
+        input_frame.pack(fill="both", expand=True, padx=15, pady=(0, 8))
+
+        domains_header_bar = ctk.CTkFrame(input_frame, fg_color="transparent")
+        domains_header_bar.pack(fill="x", padx=15, pady=(8, 2))
+        ctk.CTkLabel(
+            domains_header_bar,
+            text="Daftar Subdomain (Satu per baris):",
+            font=self.bold_font
+        ).pack(side="left")
+
+        ctk.CTkButton(
+            domains_header_bar,
+            text="🗑️ Hapus Text",
+            width=85,
+            height=22,
+            font=self.custom_font,
+            command=self.clear_input_text,
+            fg_color="#1E293B",
+            hover_color="#0F172A",
+            corner_radius=6
+        ).pack(side="right", padx=(5, 0))
+
+        ctk.CTkButton(
+            domains_header_bar,
+            text="📥 Ambil dari Antrian",
+            width=125,
+            height=22,
+            font=self.custom_font,
+            command=self.load_from_queue,
+            fg_color="#1E293B",
+            hover_color="#0F172A",
+            corner_radius=6
+        ).pack(side="right")
+
+        self.domains_input = ctk.CTkTextbox(
+            input_frame,
+            height=125,
+            font=self.custom_font,
+            fg_color="#1E293B",
+            border_color="#334155",
+            border_width=1,
+            corner_radius=8
+        )
+        self.domains_input.pack(fill="both", expand=True, padx=15, pady=(0, 4))
+
+        ctk.CTkLabel(
+            input_frame,
+            text="💡 Format: 'sub.domain.com' atau 'sub.domain.com, 103.xxx.xxx.xxx' (IP baris otomatis meng-override Target IP Default).",
+            font=self.small_font,
+            text_color="#94A3B8"
+        ).pack(anchor="w", padx=15, pady=(0, 6))
+
+        # Handle prefill
         if prefill_domain:
-            if not prefill_domain.startswith("sub.") and not prefill_domain.startswith("blog."):
-                prefill_text = f"sub.{prefill_domain}"
+            clean_prefill = prefill_domain.strip().lower()
+            if clean_prefill.startswith("http://"):
+                clean_prefill = clean_prefill[7:]
+            if clean_prefill.startswith("https://"):
+                clean_prefill = clean_prefill[8:]
+            clean_prefill = clean_prefill.strip('/')
+
+            parts = clean_prefill.split('.')
+            if len(parts) > 2:
+                base_cand = ".".join(parts[-2:])
+                self.gen_base_entry.insert(0, base_cand)
+                self.domains_input.insert("1.0", clean_prefill)
             else:
-                prefill_text = prefill_domain
-            self.domain_entry.insert(0, prefill_text)
-            
-        # Target IP Entry
-        ctk.CTkLabel(frame, text="Target IPv4 Address:", font=self.custom_font).pack(anchor="w", padx=15, pady=(0, 2))
-        self.ip_entry = ctk.CTkEntry(frame, placeholder_text="103.xxx.xxx.xxx", font=self.custom_font, fg_color="#1E293B", border_color="#334155", corner_radius=8)
-        self.ip_entry.pack(fill="x", padx=15, pady=(0, 10))
-        
-        parent_ip = self.parent.ip_entry.get().strip()
+                self.gen_base_entry.insert(0, clean_prefill)
+                self.domains_input.insert("1.0", f"sub.{clean_prefill}")
+
+        # Target IP Entry Header Bar
+        ip_header_bar = ctk.CTkFrame(input_frame, fg_color="transparent")
+        ip_header_bar.pack(fill="x", padx=15, pady=(0, 2))
+        ctk.CTkLabel(
+            ip_header_bar,
+            text="Target IPv4 Address Default:",
+            font=self.bold_font
+        ).pack(side="left")
+        ctk.CTkButton(
+            ip_header_bar,
+            text="Hapus IP",
+            width=65,
+            height=20,
+            font=self.custom_font,
+            command=lambda: self.ip_entry.delete(0, "end"),
+            fg_color="#1E293B",
+            hover_color="#0F172A",
+            corner_radius=6
+        ).pack(side="right")
+
+        self.ip_entry = ctk.CTkEntry(
+            input_frame,
+            placeholder_text="103.xxx.xxx.xxx",
+            font=self.custom_font,
+            fg_color="#1E293B",
+            border_color="#334155",
+            corner_radius=8
+        )
+        self.ip_entry.pack(fill="x", padx=15, pady=(0, 6))
+
+        parent_ip = self.parent.ip_entry.get().strip() if hasattr(self.parent, 'ip_entry') else ""
         if parent_ip and is_valid_ipv4(parent_ip):
             self.ip_entry.insert(0, parent_ip)
-            
+
         # Checkboxes
+        chk_frame = ctk.CTkFrame(input_frame, fg_color="transparent")
+        chk_frame.pack(fill="x", padx=15, pady=(0, 8))
         self.proxied_var = tk.BooleanVar(value=True)
         self.add_queue_var = tk.BooleanVar(value=True)
-        
-        chk_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        chk_frame.pack(fill="x", padx=15, pady=5)
-        
-        ctk.CTkCheckBox(chk_frame, text="Proxy Cloudflare (Orange Cloud)", font=self.custom_font, variable=self.proxied_var).pack(anchor="w", pady=2)
-        ctk.CTkCheckBox(chk_frame, text="Tambahkan ke Daftar Domain", font=self.custom_font, variable=self.add_queue_var).pack(anchor="w", pady=2)
-        
-        # Status Label
-        self.status_label = ctk.CTkLabel(frame, text="", font=self.custom_font, text_color="#3B82F6", wraplength=400)
-        self.status_label.pack(pady=5)
-        
-        # Action Buttons
-        btn_frame = ctk.CTkFrame(frame, fg_color="transparent")
-        btn_frame.pack(fill="x", padx=15, pady=(5, 10))
-        
-        self.btn_clear = ctk.CTkButton(btn_frame, text="Reset Form", font=self.custom_font, width=90, fg_color="#1E293B", hover_color="#0F172A", command=self.clear_form, corner_radius=8)
-        self.btn_clear.pack(side="left")
+        ctk.CTkCheckBox(
+            chk_frame,
+            text="Proxy Cloudflare (Orange Cloud)",
+            font=self.custom_font,
+            variable=self.proxied_var
+        ).pack(side="left", padx=(0, 15))
+        ctk.CTkCheckBox(
+            chk_frame,
+            text="Tambahkan ke Antrian Utama",
+            font=self.custom_font,
+            variable=self.add_queue_var
+        ).pack(side="left")
 
-        self.btn_cancel = ctk.CTkButton(btn_frame, text="Batal", font=self.custom_font, width=90, fg_color="#1E293B", hover_color="#0F172A", command=self.destroy, corner_radius=8)
-        self.btn_cancel.pack(side="right", padx=(5, 0))
-        
-        self.btn_submit = ctk.CTkButton(btn_frame, text="Cari & Buat Subdomain", font=self.bold_font, width=160, fg_color="#0284C7", hover_color="#0369A1", command=self.start_submit, corner_radius=8)
-        self.btn_submit.pack(side="right")
+        # 4. Status & Progress Card
+        prog_frame = ctk.CTkFrame(self, fg_color="#111827", corner_radius=8)
+        prog_frame.pack(fill="x", padx=15, pady=(0, 10))
 
-    def clear_form(self):
-        self.domain_entry.delete(0, "end")
-        self.ip_entry.delete(0, "end")
-        self.status_label.configure(text="")
+        status_bar = ctk.CTkFrame(prog_frame, fg_color="transparent")
+        status_bar.pack(fill="x", padx=15, pady=(6, 2))
+
+        self.status_lbl = ctk.CTkLabel(
+            status_bar,
+            text="Siap memproses penambahan subdomain.",
+            font=self.custom_font,
+            text_color="#38BDF8"
+        )
+        self.status_lbl.pack(side="left")
+
+        self.stats_lbl = ctk.CTkLabel(
+            status_bar,
+            text="",
+            font=self.small_font,
+            text_color="#94A3B8"
+        )
+        self.stats_lbl.pack(side="right")
+
+        self.progress_bar = ctk.CTkProgressBar(prog_frame, height=8)
+        self.progress_bar.pack(fill="x", padx=15, pady=(0, 8))
+        self.progress_bar.set(0)
+
+        # 5. Bottom Action Buttons
+        btn_bar = ctk.CTkFrame(self, fg_color="transparent")
+        btn_bar.pack(fill="x", padx=15, pady=(0, 15))
+
+        self.btn_submit = ctk.CTkButton(
+            btn_bar,
+            text="⚡ Mulai Buat Subdomain (Bulk)",
+            font=self.bold_font,
+            command=self.start_submit,
+            fg_color="#0284C7",
+            hover_color="#0369A1",
+            height=32,
+            corner_radius=8
+        )
+        self.btn_submit.pack(side="left", padx=(0, 10))
+
+        self.btn_cancel = ctk.CTkButton(
+            btn_bar,
+            text="Batal / Tutup",
+            font=self.custom_font,
+            command=self.on_cancel_click,
+            fg_color="#1E293B",
+            hover_color="#0F172A",
+            width=100,
+            height=32,
+            corner_radius=8
+        )
+        self.btn_cancel.pack(side="right")
+
+    def apply_prefix_generator(self):
+        base_dom = self.gen_base_entry.get().strip().lower()
+        if base_dom.startswith("http://"):
+            base_dom = base_dom[7:]
+        if base_dom.startswith("https://"):
+            base_dom = base_dom[8:]
+        base_dom = base_dom.strip('/')
+
+        if not base_dom:
+            messagebox.showwarning("Peringatan", "Masukkan Domain Induk (Root Domain) terlebih dahulu.", parent=self)
+            return
+
+        pfx_text = self.gen_prefixes_entry.get().strip()
+        if not pfx_text:
+            messagebox.showwarning("Peringatan", "Masukkan minimal satu prefiks (misal: blog, app, s1..s5).", parent=self)
+            return
+
+        prefixes = self.expand_prefixes(pfx_text)
+        if not prefixes:
+            messagebox.showwarning("Peringatan", "Prefiks tidak valid.", parent=self)
+            return
+
+        generated_domains = [f"{p.strip().rstrip('.')}.{base_dom}" for p in prefixes if p.strip()]
+
+        existing_text = self.domains_input.get("1.0", "end").strip()
+        if existing_text:
+            new_text = existing_text + "\n" + "\n".join(generated_domains)
+        else:
+            new_text = "\n".join(generated_domains)
+
+        self.domains_input.delete("1.0", "end")
+        self.domains_input.insert("1.0", new_text)
+        self.status_lbl.configure(text=f"Berhasil menambahkan {len(generated_domains)} subdomain ke daftar.", text_color="#10B981")
+
+    def expand_prefixes(self, prefix_text):
+        tokens = re.split(r'[,;\s]+', prefix_text.strip())
+        results = []
+        for token in tokens:
+            if not token:
+                continue
+            match = re.match(r'^([a-zA-Z_-]*)(\d+)\.\.([a-zA-Z_-]*)(\d+)$', token)
+            if match:
+                pfx1, num1_str, pfx2, num2_str = match.groups()
+                if pfx1 == pfx2:
+                    n1, n2 = int(num1_str), int(num2_str)
+                    pad = len(num1_str) if num1_str.startswith('0') and len(num1_str) > 1 else 0
+                    step = 1 if n2 >= n1 else -1
+                    if abs(n2 - n1) <= 500:
+                        for n in range(n1, n2 + step, step):
+                            num_formatted = f"{n:0{pad}d}" if pad > 0 else str(n)
+                            results.append(f"{pfx1}{num_formatted}")
+                        continue
+            results.append(token)
+        return results
+
+    def clear_input_text(self):
+        self.domains_input.delete("1.0", "end")
+        self.status_lbl.configure(text="Daftar subdomain berhasil dikosongkan.", text_color="#A0A0A0")
+        self.stats_lbl.configure(text="")
+        self.progress_bar.set(0)
+
+    def load_from_queue(self):
+        if self.domains_data:
+            unique_domains = []
+            seen = set()
+            for d in self.domains_data:
+                dom = d.get('domain', '').strip()
+                if dom and dom not in seen:
+                    seen.add(dom)
+                    unique_domains.append(dom)
+            if unique_domains:
+                self.domains_input.delete("1.0", "end")
+                self.domains_input.insert("1.0", "\n".join(unique_domains))
+                self.status_lbl.configure(text=f"Berhasil mengambil {len(unique_domains)} domain dari antrian.", text_color="#10B981")
+            else:
+                messagebox.showinfo("Info", "Tidak ada domain di antrian utama.", parent=self)
+        else:
+            messagebox.showinfo("Info", "Antrian utama kosong.", parent=self)
+
+    def on_cancel_click(self):
+        if self.is_processing:
+            self.should_stop = True
+            self.status_lbl.configure(text="Menghentikan proses... Silakan tunggu.", text_color="#EF4444")
+            self.btn_cancel.configure(state="disabled")
+        else:
+            self.destroy()
+
+    def _parse_subdomain_line(self, line, default_ip):
+        line = line.strip()
+        if not line:
+            return None, None
+
+        parts = []
+        for delim in [',', '|', ';', '\t']:
+            if delim in line:
+                parts = [p.strip() for p in line.split(delim) if p.strip()]
+                break
+        if not parts:
+            parts = [p.strip() for p in line.split() if p.strip()]
+
+        if not parts:
+            return None, None
+
+        dom = parts[0]
+        ip_cand = None
+        for p in parts[1:]:
+            if is_valid_ipv4(p):
+                ip_cand = p
+                break
+
+        if is_valid_ipv4(dom):
+            if len(parts) > 1 and not is_valid_ipv4(parts[1]):
+                dom, ip_cand = parts[1], dom
+
+        target_ip = ip_cand if ip_cand else default_ip
+        return dom, target_ip
 
     def start_submit(self):
-        domain_str = self.domain_entry.get().strip()
-        ip_str = self.ip_entry.get().strip()
-        
-        if not domain_str:
-            messagebox.showerror("Error", "Masukkan Nama Subdomain / Domain.", parent=self)
+        if self.is_processing:
             return
-            
-        if not ip_str or not is_valid_ipv4(ip_str):
-            messagebox.showerror("Error", "Masukkan Target IPv4 Address yang valid.", parent=self)
+
+        text = self.domains_input.get("1.0", "end").strip()
+        default_ip = self.ip_entry.get().strip()
+
+        if not text:
+            messagebox.showerror("Error", "Masukkan minimal satu subdomain.", parent=self)
             return
-            
-        self.btn_submit.configure(state="disabled")
-        self.btn_cancel.configure(state="disabled")
-        self.status_label.configure(text="Mencari zone domain di seluruh profil Cloudflare...", text_color="#3B82F6")
-        
+
+        raw_lines = [l.strip() for l in text.split('\n') if l.strip()]
+        if not raw_lines:
+            return
+
+        parsed_items = []
+        invalid_ip_lines = []
+
+        for line in raw_lines:
+            dom, ip = self._parse_subdomain_line(line, default_ip)
+            if not dom:
+                continue
+
+            if not ip or not is_valid_ipv4(ip):
+                invalid_ip_lines.append(f"{dom} ({ip or 'Tidak ada IP'})")
+                continue
+
+            clean_dom = dom.lower()
+            if clean_dom.startswith("http://"):
+                clean_dom = clean_dom[7:]
+            if clean_dom.startswith("https://"):
+                clean_dom = clean_dom[8:]
+            clean_dom = clean_dom.strip('/')
+
+            parsed_items.append((clean_dom, ip))
+
+        if invalid_ip_lines:
+            err_msg = "Format Target IP tidak valid untuk item berikut:\n- " + "\n- ".join(invalid_ip_lines[:5])
+            if len(invalid_ip_lines) > 5:
+                err_msg += f"\n... dan {len(invalid_ip_lines) - 5} lainnya."
+            err_msg += "\n\nPastikan Target IPv4 Address default valid atau setiap baris memiliki IP valid."
+            messagebox.showerror("Error IP", err_msg, parent=self)
+            return
+
+        if not parsed_items:
+            messagebox.showerror("Error", "Tidak ada subdomain valid yang dapat diproses.", parent=self)
+            return
+
+        self.is_processing = True
+        self.should_stop = False
+        self.btn_submit.configure(state="disabled", text="⏳ Memproses Subdomain...")
+        self.btn_cancel.configure(text="⏹ Hentikan", state="normal")
+        self.status_lbl.configure(text=f"Mempersiapkan {len(parsed_items)} subdomain...", text_color="#38BDF8")
+        self.stats_lbl.configure(text="")
+        self.progress_bar.set(0)
+
         threading.Thread(
-            target=self._process_add_subdomain,
-            args=(domain_str, ip_str, self.proxied_var.get(), self.add_queue_var.get()),
+            target=self.worker,
+            args=(parsed_items, self.proxied_var.get(), self.add_queue_var.get()),
             daemon=True
         ).start()
 
-    def _process_add_subdomain(self, domain_str, ip_str, proxied, add_queue):
+    def worker(self, items, proxied, add_queue):
+        total = len(items)
+        success_count = 0
+        failed_count = 0
+        failed_details = []
+        zone_cache = {}
+
+        for i, (dom, ip_str) in enumerate(items):
+            if self.should_stop:
+                break
+
+            idx = i + 1
+            self.after(0, lambda idx=idx, d=dom, ip=ip_str, sc=success_count, fc=failed_count: (
+                self.status_lbl.configure(text=f"Memproses ({idx}/{total}): {d} -> {ip} ...", text_color="#38BDF8"),
+                self.stats_lbl.configure(text=f"Sukses: {sc} | Gagal: {fc}"),
+                self.progress_bar.set(idx / total)
+            ))
+
+            # 1. Resolve Zone with Caching across all Cloudflare profiles
+            prof_name, api, zone_id, zone_name, ns_list, err_msg = self._resolve_zone_cached(dom, zone_cache)
+
+            if not zone_id:
+                failed_count += 1
+                msg = err_msg or "Domain zone tidak ditemukan pada profil Cloudflare manapun."
+                failed_details.append(f"{dom}: {msg}")
+                app_logger.error(f"[{dom}] Gagal tambah subdomain: {msg}")
+                if add_queue:
+                    self.after(0, lambda d=dom, ip=ip_str, m=msg: self._update_queue_item(d, ip, '', 'Failed', '', m))
+                time.sleep(0.1)
+                continue
+
+            # 2. Upsert A Record
+            try:
+                success, msg = api.upsert_dns_record(zone_id, "A", dom, ip_str, proxied=proxied)
+                ns_string = ", ".join(ns_list) if ns_list else ""
+
+                if success:
+                    success_count += 1
+                    app_logger.info(f"[{dom}] Subdomain A-Record berhasil dibuat di profil '{prof_name}' dengan IP {ip_str}.")
+                    if add_queue:
+                        self.after(0, lambda d=dom, ip=ip_str, pr=prof_name, ns=ns_string:
+                                   self._update_queue_item(d, ip, pr, 'Success', ns, ''))
+                else:
+                    failed_count += 1
+                    failed_details.append(f"{dom}: {msg}")
+                    app_logger.error(f"[{dom}] Gagal buat DNS record di '{prof_name}': {msg}")
+                    if add_queue:
+                        self.after(0, lambda d=dom, ip=ip_str, pr=prof_name, ns=ns_string, m=msg:
+                                   self._update_queue_item(d, ip, pr, 'Failed', ns, m))
+            except Exception as ex:
+                failed_count += 1
+                failed_details.append(f"{dom}: {str(ex)}")
+                app_logger.error(f"[{dom}] Exception saat membuat DNS record: {ex}")
+                if add_queue:
+                    self.after(0, lambda d=dom, ip=ip_str, m=str(ex):
+                               self._update_queue_item(d, ip, '', 'Failed', '', m))
+
+            time.sleep(0.3)
+
+        self.after(0, lambda: self._on_finish(total, success_count, failed_count, failed_details, self.should_stop))
+
+    def _resolve_zone_cached(self, domain_str, zone_cache):
+        parts = domain_str.strip().lower().split('.')
+        if len(parts) >= 2:
+            for i in range(len(parts) - 1):
+                cand = ".".join(parts[i:])
+                if cand in zone_cache:
+                    prof_name, api, zone_id, zone_name, ns_list = zone_cache[cand]
+                    return prof_name, api, zone_id, zone_name, ns_list, None
+
         prof_name, api, zone_id, zone_name, ns_list, err_msg = find_zone_across_profiles(self.config, domain_str)
-        
-        if not zone_id:
-            self.after(0, lambda: self._on_failure(err_msg or "Domain tidak ditemukan pada profil Cloudflare manapun."))
-            return
-            
-        self.after(0, lambda: self.status_label.configure(text=f"Domain ditemukan di profil '{prof_name}'. Membuat A Record..."))
-        
-        success, msg = api.upsert_dns_record(zone_id, "A", domain_str, ip_str, proxied=proxied)
-        
-        if success:
-            app_logger.info(f"[{domain_str}] Subdomain berhasil dibuat di Cloudflare (Profil: '{prof_name}') dengan IP {ip_str}.")
-            
-            ns_string = ", ".join(ns_list) if ns_list else ""
-            if add_queue:
-                existing = False
-                for item in self.domains_data:
-                    if item.get('domain') == domain_str:
-                        item['ip'] = ip_str
-                        item['status'] = 'Success'
-                        if ns_string:
-                            item['nameservers'] = ns_string
-                        item['error'] = ''
-                        existing = True
-                        break
-                if not existing:
-                    self.domains_data.append({
-                        'domain': domain_str,
-                        'ip': ip_str,
-                        'profile': prof_name,
-                        'status': 'Success',
-                        'nameservers': ns_string,
-                        'error': ''
-                    })
-                export_utils.save_state(self.domains_data)
-                self.after(0, self.on_success_callback)
-                
-            self.after(0, lambda: self._on_success_finish(domain_str, zone_name, prof_name, ip_str))
-        else:
-            app_logger.error(f"[{domain_str}] Gagal membuat subdomain: {msg}")
-            self.after(0, lambda: self._on_failure(f"Gagal membuat record DNS: {msg}"))
+        if zone_id and zone_name:
+            zone_cache[zone_name] = (prof_name, api, zone_id, zone_name, ns_list)
+            zone_cache[domain_str] = (prof_name, api, zone_id, zone_name, ns_list)
 
-    def _on_failure(self, message):
-        self.status_label.configure(text=message, text_color="#EF4444")
-        self.btn_submit.configure(state="normal")
-        self.btn_cancel.configure(state="normal")
-        messagebox.showwarning("Informasi / Gagal", message, parent=self)
+        return prof_name, api, zone_id, zone_name, ns_list, err_msg
 
-    def _on_success_finish(self, domain_str, zone_name, prof_name, ip_str):
-        messagebox.showinfo(
-            "Berhasil",
-            f"Subdomain Berhasil Dibuat!\n\n"
-            f"Domain Zone: {zone_name}\n"
-            f"Profil CF: {prof_name}\n"
-            f"Subdomain: {domain_str}\n"
-            f"Target IP: {ip_str}",
-            parent=self.parent
+    def _update_queue_item(self, domain_str, ip_str, prof_name, status, ns_string, err_msg):
+        existing = False
+        for item in self.domains_data:
+            if item.get('domain') == domain_str:
+                item['ip'] = ip_str
+                item['profile'] = prof_name
+                item['status'] = status
+                if ns_string:
+                    item['nameservers'] = ns_string
+                item['error'] = err_msg or ''
+                existing = True
+                break
+        if not existing:
+            self.domains_data.append({
+                'domain': domain_str,
+                'ip': ip_str,
+                'profile': prof_name,
+                'status': status,
+                'nameservers': ns_string or '',
+                'error': err_msg or ''
+            })
+        export_utils.save_state(self.domains_data)
+        if self.on_success_callback:
+            self.on_success_callback()
+
+    def _on_finish(self, total, success_count, failed_count, failed_details, was_stopped):
+        self.is_processing = False
+        self.btn_submit.configure(state="normal", text="⚡ Mulai Buat Subdomain (Bulk)")
+        self.btn_cancel.configure(state="normal", text="Batal / Tutup")
+
+        status_text = "Dihentikan oleh pengguna." if was_stopped else "Selesai memproses seluruh subdomain."
+        self.status_lbl.configure(text=status_text, text_color="#10B981" if failed_count == 0 else "#F59E0B")
+        self.stats_lbl.configure(text=f"Total: {total} | Sukses: {success_count} | Gagal: {failed_count}")
+
+        summary = (
+            f"Proses Pembuatan Subdomain Selesai!\n\n"
+            f"• Total Diproses : {success_count + failed_count} dari {total}\n"
+            f"• Berhasil       : {success_count}\n"
+            f"• Gagal          : {failed_count}\n"
         )
-        self.destroy()
+        if was_stopped:
+            summary = "⚠️ Proses Dihentikan Lebih Awal\n\n" + summary
+
+        if failed_details:
+            summary += "\nRincian Gagal (Maks 5):\n"
+            for detail in failed_details[:5]:
+                summary += f"- {detail}\n"
+            if len(failed_details) > 5:
+                summary += f"... dan {len(failed_details) - 5} kesalahan lainnya (cek log).\n"
+            messagebox.showwarning("Ringkasan Subdomain", summary, parent=self)
+        else:
+            messagebox.showinfo("Berhasil", summary, parent=self)
 
 class UpdateIPDialog(ctk.CTkToplevel):
     def __init__(self, parent, config, domains_data, on_success_callback, prefill_domain=""):
@@ -1335,7 +1766,7 @@ class App(ctk.CTk):
         # Set window & taskbar icon (use PNG for high-res clarity)
         try:
             import ctypes
-            myappid = 'skylark.flarepilot.manager.1.3.3'
+            myappid = 'skylark.flarepilot.manager.1.3.4'
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         except Exception:
             pass
@@ -1497,7 +1928,7 @@ class App(ctk.CTk):
         self.btn_update_ip = ctk.CTkButton(row1_frame, text="Ubah IP", font=self.bold_font, command=lambda: self.open_update_ip_dialog(), fg_color="#0891B2", hover_color="#0E7490", width=80, height=30, corner_radius=8)
         self.btn_update_ip.pack(side="left", padx=5)
 
-        self.btn_add_subdomain = ctk.CTkButton(row1_frame, text="+ Subdomain", font=self.bold_font, command=lambda: self.open_add_subdomain_dialog(), fg_color="#475569", hover_color="#334155", width=100, height=30, corner_radius=8)
+        self.btn_add_subdomain = ctk.CTkButton(row1_frame, text="+ Bulk Subdomain", font=self.bold_font, command=lambda: self.open_add_subdomain_dialog(), fg_color="#475569", hover_color="#334155", width=125, height=30, corner_radius=8)
         self.btn_add_subdomain.pack(side="left", padx=5)
 
         self.btn_rules = ctk.CTkButton(row1_frame, text="⚡ CF Rules", font=self.bold_font, command=self.open_redirect_rules_dialog, fg_color="#8B5CF6", hover_color="#7C3AED", width=95, height=30, corner_radius=8)

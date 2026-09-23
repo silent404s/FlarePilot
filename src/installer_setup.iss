@@ -4,7 +4,7 @@
 ; =====================================================================
 
 #define MyAppName "FlarePilot"
-#define MyAppVersion "1.3.3"
+#define MyAppVersion "1.3.4"
 #define MyAppPublisher "Skylark"
 #define MyAppURL "https://github.com/silent404s/cloudflare-domain-manager"
 #define MyAppExeName "FlarePilot.exe"
@@ -56,6 +56,7 @@ Source: "..\dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 
 ; File Pendukung & Icon
 Source: "app_icon.ico"; DestDir: "{app}"; Flags: ignoreversion
+Source: "app_icon.png"; DestDir: "{app}"; Flags: ignoreversion
 Source: "config.json.example"; DestDir: "{app}"; Flags: ignoreversion
 
 ; Konfigurasi Pengguna (Hanya dibuat jika BELUM ADA, agar setting/token lama pengguna tidak terhapus saat update)
