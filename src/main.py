@@ -239,18 +239,17 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         self.initial_domain = initial_domain
         
         self.title("Cloudflare Redirect Rules Manager")
-        self.geometry("780x820")
-        self.minsize(720, 750)
+        self.geometry("780x760")
+        self.minsize(720, 700)
         self.configure(fg_color="#0B0F19")
         
         self.custom_font = ctk.CTkFont(family="Segoe UI", size=11)
         self.bold_font = ctk.CTkFont(family="Segoe UI", size=11, weight="bold")
+        self.small_font = ctk.CTkFont(family="Segoe UI", size=10)
         self.log_font = ctk.CTkFont(family="Consolas", size=10)
         
-        self.rule_rows = [] # list of dicts: {'frame': ..., 'path_entry': ..., 'target_entry': ...}
-        
         self.build_ui()
-        center_window_over_parent(self, parent, 780, 820)
+        center_window_over_parent(self, parent, 780, 760)
         self.grab_set()
         
     def build_ui(self):
@@ -294,101 +293,156 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         if saved_rules_token:
             self.token_entry.insert(0, saved_rules_token)
 
-        # Root Rule Settings Section
-        root_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
-        root_frame.pack(fill="x", padx=10, pady=4)
-        
-        self.root_enabled_var = tk.BooleanVar(value=True)
-        chk_root = ctk.CTkCheckBox(root_frame, text="Otomatis buat Root Rule jika BELUM ADA di CF (Rule 'Root', Order: Last, 302, Preserve Query: OFF)", font=self.bold_font, variable=self.root_enabled_var, text_color="#38BDF8")
-        chk_root.pack(anchor="w", padx=10, pady=(6, 2))
-        
-        root_input_frame = ctk.CTkFrame(root_frame, fg_color="transparent")
-        root_input_frame.pack(fill="x", padx=10, pady=(0, 6))
-        
-        ctk.CTkLabel(root_input_frame, text="Target URL Root (Tujuan Wajib):", font=self.custom_font).pack(side="left", padx=(0, 5))
-        self.root_url_entry = ctk.CTkEntry(root_input_frame, placeholder_text="https://www.youtube.com/", font=self.custom_font, fg_color="#111827", border_color="#334155")
-        self.root_url_entry.pack(side="left", fill="x", expand=True)
-        self.root_url_entry.insert(0, "https://www.youtube.com/")
-
-        # Path Rules Search & Input Section
+        # Path Rules Search & Load Section
         search_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
-        search_frame.pack(fill="x", padx=10, pady=(4, 2))
+        search_frame.pack(fill="x", padx=10, pady=(4, 4))
         
-        ctk.CTkLabel(search_frame, text="🔍 Cari Path Rule untuk Ubah Tujuan:", font=self.bold_font, text_color="#38BDF8").pack(side="left", padx=(10, 5), pady=4)
+        ctk.CTkLabel(search_frame, text="🔍 Cari Path Rule:", font=self.bold_font, text_color="#38BDF8").pack(side="left", padx=(10, 5), pady=4)
         
         self.search_entry = ctk.CTkEntry(search_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#111827", border_color="#334155")
         self.search_entry.pack(side="left", fill="x", expand=True, padx=(0, 6), pady=4)
         
-        btn_search = ctk.CTkButton(search_frame, text="🔍 Cari Rule", font=self.bold_font, width=100, height=26, fg_color="#0284C7", hover_color="#0369A1", command=self.search_single_rule, corner_radius=6)
-        btn_search.pack(side="right", padx=(0, 10), pady=4)
+        btn_search = ctk.CTkButton(search_frame, text="🔍 Cari Rule", font=self.bold_font, width=95, height=26, fg_color="#0284C7", hover_color="#0369A1", command=self.search_single_rule, corner_radius=6)
+        btn_search.pack(side="right", padx=(0, 6), pady=4)
 
-        # Header for 2-column input table
-        rules_header_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        rules_header_frame.pack(fill="x", padx=10, pady=(4, 2))
-        ctk.CTkLabel(rules_header_frame, text="Form Buat / Edit Path Rules (Order: First, 302, Preserve Query: ON):", font=self.bold_font).pack(side="left")
+        btn_load_cf = ctk.CTkButton(search_frame, text="📥 Muat Rules dari CF", font=self.custom_font, width=135, height=26, fg_color="#334155", hover_color="#475569", command=self.load_existing_rules_from_cf, corner_radius=6)
+        btn_load_cf.pack(side="right", padx=(0, 4), pady=4)
 
-        # Scrollable Frame for 2-column rows
-        self.scroll_frame = ctk.CTkScrollableFrame(main_frame, fg_color="#1E293B", height=135, corner_radius=6)
-        self.scroll_frame.pack(fill="x", padx=10, pady=2)
+        # Single Target URL Section (1 Target untuk Semua Path)
+        target_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
+        target_frame.pack(fill="x", padx=10, pady=(4, 4))
         
-        # Header inside scroll frame
-        col_header = ctk.CTkFrame(self.scroll_frame, fg_color="#111827", height=26)
-        col_header.pack(fill="x", pady=(0, 4))
-        ctk.CTkLabel(col_header, text="Domain + Path (contoh: domain.com/path)", font=self.bold_font, width=280).pack(side="left", padx=5)
-        ctk.CTkLabel(col_header, text="Target URL Tujuan (contoh: https://tujuan.com/landing)", font=self.bold_font).pack(side="left", padx=5)
-
-        # Row Management Buttons
-        row_btn_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
-        row_btn_frame.pack(fill="x", padx=10, pady=4)
+        ctk.CTkLabel(target_frame, text="🎯 Target URL Tujuan (1 Tujuan Domain untuk Semua Path di Bawah):", font=self.bold_font, text_color="#38BDF8").pack(anchor="w", padx=10, pady=(6, 2))
         
-        ctk.CTkButton(row_btn_frame, text="+ Tambah Baris Rule", font=self.custom_font, width=130, height=26, command=self.add_rule_row, fg_color="#1E293B", hover_color="#0F172A", border_width=1, border_color="#3D3D3D", corner_radius=6).pack(side="left")
-        ctk.CTkButton(row_btn_frame, text="Clear Semua Baris", font=self.custom_font, width=120, height=26, command=self.clear_all_rows, fg_color="#8A1A23", hover_color="#A11E29", corner_radius=6).pack(side="left", padx=8)
+        self.target_url_entry = ctk.CTkEntry(target_frame, placeholder_text="https://tujuan-custom.com/landing", font=self.custom_font, fg_color="#111827", border_color="#334155", height=32)
+        self.target_url_entry.pack(fill="x", padx=10, pady=(0, 8))
+        self.target_url_entry.insert(0, "https://")
 
-        # Add initial clean default rows
+        # Bulk Paths Input Section (Banyak Link ke 1 Tujuan)
+        bulk_frame = ctk.CTkFrame(main_frame, fg_color="#1E293B", corner_radius=6)
+        bulk_frame.pack(fill="both", expand=True, padx=10, pady=(4, 4))
+        
+        bulk_header = ctk.CTkFrame(bulk_frame, fg_color="transparent")
+        bulk_header.pack(fill="x", padx=10, pady=(6, 2))
+        
+        ctk.CTkLabel(bulk_header, text="📋 Daftar Link & Path (Bisa Tempel Banyak Sekaligus - 1 Baris per Link):", font=self.bold_font, text_color="#A78BFA").pack(side="left")
+        
+        btn_clear = ctk.CTkButton(bulk_header, text="🗑️ Clear", font=self.custom_font, width=70, height=24, fg_color="#8A1A23", hover_color="#A11E29", command=self.clear_paths_textbox, corner_radius=6)
+        btn_clear.pack(side="right", padx=(4, 0))
+        
+        btn_paste = ctk.CTkButton(bulk_header, text="📋 Paste Clipboard", font=self.custom_font, width=125, height=24, fg_color="#334155", hover_color="#475569", command=self.paste_to_paths_textbox, corner_radius=6)
+        btn_paste.pack(side="right")
+
+        self.paths_textbox = ctk.CTkTextbox(bulk_frame, height=140, font=self.custom_font, fg_color="#111827", border_color="#334155", border_width=1, corner_radius=6)
+        self.paths_textbox.pack(fill="both", expand=True, padx=10, pady=(2, 4))
+        
         if self.initial_domain:
-            self.add_rule_row(domain_path=f"{self.initial_domain}/path", target_url="https://tujuan.com/landing")
-        else:
-            self.add_rule_row(domain_path="", target_url="")
+            self.paths_textbox.insert("1.0", f"{self.initial_domain}/path1\n{self.initial_domain}/path2")
+
+        # Helper & Default Domain Row
+        helper_frame = ctk.CTkFrame(bulk_frame, fg_color="transparent")
+        helper_frame.pack(fill="x", padx=10, pady=(0, 6))
+        
+        ctk.CTkLabel(helper_frame, text="Default Domain (jika baris hanya /path):", font=self.custom_font, text_color="#94A3B8").pack(side="left", padx=(0, 5))
+        self.default_domain_entry = ctk.CTkEntry(helper_frame, placeholder_text="domain.com", font=self.custom_font, width=180, height=26, fg_color="#111827", border_color="#334155")
+        self.default_domain_entry.pack(side="left")
+        if self.initial_domain:
+            self.default_domain_entry.insert(0, self.initial_domain)
+
+        ctk.CTkLabel(helper_frame, text="💡 Format: domain.com/path atau /path. (Rule Root tidak disentuh)", font=self.small_font, text_color="#64748B").pack(side="right", padx=(5, 0))
 
         # Progress Bar & Log Output
         self.progress_var = tk.DoubleVar(value=0)
         self.progress = ctk.CTkProgressBar(main_frame, variable=self.progress_var)
-        self.progress.pack(fill="x", padx=10, pady=4)
+        self.progress.pack(fill="x", padx=10, pady=(4, 2))
         
-        self.log_box = ctk.CTkTextbox(main_frame, height=75, font=self.log_font, fg_color="#1E293B", border_color="#334155", border_width=1, corner_radius=6)
-        self.log_box.pack(fill="x", padx=10, pady=(0, 6))
+        self.log_box = ctk.CTkTextbox(main_frame, height=85, font=self.log_font, fg_color="#1E293B", border_color="#334155", border_width=1, corner_radius=6)
+        self.log_box.pack(fill="x", padx=10, pady=(2, 6))
         self.log_box.configure(state="disabled")
 
-    def add_rule_row(self, domain_path="", target_url=""):
-        row_frame = ctk.CTkFrame(self.scroll_frame, fg_color="transparent")
-        row_frame.pack(fill="x", pady=2)
-        
-        path_entry = ctk.CTkEntry(row_frame, placeholder_text="domain.com/path", font=self.custom_font, fg_color="#111827", border_color="#334155")
-        path_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        if domain_path:
-            path_entry.insert(0, domain_path)
-            
-        target_entry = ctk.CTkEntry(row_frame, placeholder_text="https://tujuan-custom.com/...", font=self.custom_font, fg_color="#111827", border_color="#334155")
-        target_entry.pack(side="left", fill="x", expand=True, padx=(0, 4))
-        if target_url:
-            target_entry.insert(0, target_url)
-            
-        row_dict = {'frame': row_frame, 'path_entry': path_entry, 'target_entry': target_entry}
-        
-        btn_del = ctk.CTkButton(row_frame, text="✕", width=28, height=28, fg_color="#8A1A23", hover_color="#A11E29", command=lambda r=row_dict: self.remove_rule_row(r))
-        btn_del.pack(side="right")
-        
-        self.rule_rows.append(row_dict)
+    def paste_to_paths_textbox(self):
+        try:
+            clipboard_text = self.clipboard_get()
+            if clipboard_text:
+                existing = self.paths_textbox.get("1.0", "end").strip()
+                if existing:
+                    self.paths_textbox.insert("end", "\n" + clipboard_text.strip())
+                else:
+                    self.paths_textbox.insert("1.0", clipboard_text.strip())
+        except Exception:
+            pass
 
-    def remove_rule_row(self, row_dict):
-        if row_dict in self.rule_rows:
-            self.rule_rows.remove(row_dict)
-            row_dict['frame'].destroy()
+    def clear_paths_textbox(self):
+        self.paths_textbox.delete("1.0", "end")
 
-    def clear_all_rows(self):
-        for r in list(self.rule_rows):
-            r['frame'].destroy()
-        self.rule_rows = []
+    def parse_path_lines(self, raw_text, default_domain, target_url):
+        """
+        Parses multi-line text into a dictionary grouped by domain:
+        { 'domain.com': [{'path': '/jamp', 'target_url': 'https://...'}], ... }
+        Ensures Root rules are never touched.
+        """
+        domain_rules_map = {}
+        invalid_lines = []
+        
+        for raw_line in raw_text.splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith('#'):
+                continue
+            
+            # Remove protocol if user pasted full URL
+            if '://' in line:
+                line = line.split('://', 1)[1]
+            
+            # Strip query params or hash
+            if '?' in line:
+                line = line.split('?', 1)[0]
+            if '#' in line:
+                line = line.split('#', 1)[0]
+            line = line.strip()
+            if not line:
+                continue
+
+            if line.startswith('/'):
+                # Line only has path e.g. /promo
+                if not default_domain:
+                    invalid_lines.append(f"{raw_line} (Domain belum diisi di kolom Default Domain)")
+                    continue
+                dom = default_domain.strip().lower()
+                p = '/' + line.strip('/')
+            elif '/' in line:
+                # domain.com/promo or sub.domain.com/landing
+                parts = line.split('/', 1)
+                dom = parts[0].strip().lower()
+                p = '/' + parts[1].strip('/')
+            else:
+                # No slash, e.g. "domain.com" or "promo"
+                if '.' in line and not line.startswith('.'):
+                    invalid_lines.append(f"{raw_line} (Path tidak ada, contoh yang benar: domain.com/path)")
+                    continue
+                else:
+                    if default_domain:
+                        dom = default_domain.strip().lower()
+                        p = '/' + line.strip('/')
+                    else:
+                        invalid_lines.append(f"{raw_line} (Format tidak dikenal)")
+                        continue
+
+            if not p or p == '/' or p.lower() in ['/root', 'root']:
+                invalid_lines.append(f"{raw_line} (Diabaikan karena rule Root tidak disentuh)")
+                continue
+
+            # Strip port if any
+            if ':' in dom:
+                dom = dom.split(':', 1)[0]
+
+            if dom not in domain_rules_map:
+                domain_rules_map[dom] = []
+
+            # Avoid duplicates within same domain
+            if not any(r['path'] == p for r in domain_rules_map[dom]):
+                domain_rules_map[dom].append({'path': p, 'target_url': target_url})
+
+        return domain_rules_map, invalid_lines
 
     def resolve_api_and_zone_for_domain(self, domain_str, custom_token=None):
         selected_mode = self.profile_select_var.get() if hasattr(self, 'profile_select_var') else "Auto-Detect"
@@ -466,31 +520,49 @@ class RedirectRulesDialog(ctk.CTkToplevel):
             self.append_log(f"[{dom}] Gagal mencari rule: {msg}")
             return
 
-        self.clear_all_rows()
+        full_dom_path = f"{dom}{path}" if path != '/root' else dom
         
         if rule:
             t_url = rule.get('target_url', '')
-            full_dom_path = f"{dom}{path}" if path != '/root' else dom
-            self.add_rule_row(domain_path=full_dom_path, target_url=t_url)
-            self.append_log(f"[{dom}] Rule '{path}' DITEMUKAN! Target URL saat ini: {t_url}")
-            messagebox.showinfo("Rule Ditemukan", f"Rule '{path}' ditemukan pada Cloudflare!\n\nTarget URL saat ini:\n{t_url}\n\nSilakan ubah URL tujuan pada kolom kanan lalu klik Mulai Update.", parent=self)
+            self.target_url_entry.delete(0, "end")
+            self.target_url_entry.insert(0, t_url)
+            
+            existing_text = self.paths_textbox.get("1.0", "end").strip()
+            if full_dom_path not in existing_text:
+                if existing_text:
+                    self.paths_textbox.insert("end", f"\n{full_dom_path}")
+                else:
+                    self.paths_textbox.insert("1.0", full_dom_path)
+                    
+            self.default_domain_entry.delete(0, "end")
+            self.default_domain_entry.insert(0, dom)
+            
+            self.append_log(f"[{dom}] Rule '{path}' DITEMUKAN! Target URL: {t_url}")
+            messagebox.showinfo("Rule Ditemukan", f"Rule '{path}' ditemukan pada Cloudflare!\n\nTarget URL saat ini:\n{t_url}\n\nURL tujuan dan link path telah dimasukkan ke formulir.", parent=self)
         else:
-            full_dom_path = f"{dom}{path}" if path != '/root' else dom
-            self.add_rule_row(domain_path=full_dom_path, target_url="https://")
-            self.append_log(f"[{dom}] Rule '{path}' belum ada di Cloudflare. Anda bisa membuatnya sekarang.")
-            messagebox.showinfo("Rule Belum Ada", f"Rule '{path}' belum ada di Cloudflare.\n\nFormulir di bawah telah disiapkan untuk membuat rule baru.", parent=self)
+            existing_text = self.paths_textbox.get("1.0", "end").strip()
+            if full_dom_path not in existing_text:
+                if existing_text:
+                    self.paths_textbox.insert("end", f"\n{full_dom_path}")
+                else:
+                    self.paths_textbox.insert("1.0", full_dom_path)
+            self.default_domain_entry.delete(0, "end")
+            self.default_domain_entry.insert(0, dom)
+            self.append_log(f"[{dom}] Rule '{path}' belum ada di Cloudflare.")
+            messagebox.showinfo("Rule Belum Ada", f"Rule '{path}' belum ada di Cloudflare.\n\nLink path telah dimasukkan ke daftar di bawah. Silakan sesuaikan Target URL Tujuan lalu klik Mulai Buat / Update Rules.", parent=self)
 
     def load_existing_rules_from_cf(self):
-        target_domain = self.initial_domain
-        if not target_domain and self.rule_rows:
-            first_path = self.rule_rows[0]['path_entry'].get().strip()
-            if '/' in first_path:
-                target_domain = first_path.split('/', 1)[0]
-            elif first_path:
-                target_domain = first_path
+        target_domain = self.default_domain_entry.get().strip() or self.initial_domain
+        if not target_domain:
+            first_line = self.paths_textbox.get("1.0", "end").strip().splitlines()
+            if first_line:
+                cand = first_line[0].strip()
+                if '://' in cand: cand = cand.split('://', 1)[1]
+                if '/' in cand: target_domain = cand.split('/', 1)[0]
+                elif '.' in cand: target_domain = cand
 
-        dialog_input = ctk.CTkInputDialog(text="Masukkan nama domain untuk memuat rules dari CF:", title="Load Rules Cloudflare")
-        center_window_over_parent(dialog_input, self, 350, 200)
+        dialog_input = ctk.CTkInputDialog(text="Masukkan nama domain untuk memuat rules dari Cloudflare:", title="Load Rules Cloudflare")
+        center_window_over_parent(dialog_input, self, 380, 200)
         domain_query = dialog_input.get_input()
         
         if not domain_query:
@@ -521,24 +593,35 @@ class RedirectRulesDialog(ctk.CTkToplevel):
             self.append_log(f"[{domain_query}] Tidak ada existing rules di Cloudflare.")
             return
 
-        self.clear_all_rows()
-        
-        loaded_count = 0
+        loaded_paths = []
+        found_target_url = None
         for r in rules_list:
             desc = r.get('description', '')
             t_url = r.get('target_url', '')
-            if desc == "Root":
-                self.root_enabled_var.set(True)
-                self.root_url_entry.delete(0, "end")
-                self.root_url_entry.insert(0, t_url)
-            else:
-                p_name = desc if desc.startswith('/') else f"/{desc}"
-                full_dom_path = f"{domain_query}{p_name}"
-                self.add_rule_row(domain_path=full_dom_path, target_url=t_url)
-                loaded_count += 1
+            # Jangan sentuh atau muat Root rule
+            if desc == "Root" or "wildcard" in r.get('expression', ''):
+                continue
+            
+            p_name = desc if desc.startswith('/') else f"/{desc}"
+            loaded_paths.append(f"{domain_query}{p_name}")
+            if not found_target_url and t_url:
+                found_target_url = t_url
 
-        self.append_log(f"[{domain_query}] Berhasil memuat {loaded_count} path rules dan Root rule dari CF!")
-        messagebox.showinfo("Berhasil", f"Berhasil memuat rules untuk domain '{domain_query}'!", parent=self)
+        if not loaded_paths:
+            messagebox.showinfo("Informasi", f"Hanya ditemukan rule Root pada domain '{domain_query}'. Tidak ada path rules.", parent=self)
+            return
+
+        self.paths_textbox.delete("1.0", "end")
+        self.paths_textbox.insert("1.0", "\n".join(loaded_paths))
+        self.default_domain_entry.delete(0, "end")
+        self.default_domain_entry.insert(0, domain_query)
+        
+        if found_target_url:
+            self.target_url_entry.delete(0, "end")
+            self.target_url_entry.insert(0, found_target_url)
+
+        self.append_log(f"[{domain_query}] Berhasil memuat {len(loaded_paths)} path rules dari CF!")
+        messagebox.showinfo("Berhasil", f"Berhasil memuat {len(loaded_paths)} path rules untuk domain '{domain_query}'!", parent=self)
 
     def append_log(self, message):
         def _do_append():
@@ -557,53 +640,43 @@ class RedirectRulesDialog(ctk.CTkToplevel):
         self.config["rules_selected_profile"] = self.profile_select_var.get()
         config_manager.save_config(self.config)
 
-        root_url = self.root_url_entry.get().strip() if self.root_enabled_var.get() else None
-        
-        domain_rules_map = {}
-        
-        for r in self.rule_rows:
-            path_str = r['path_entry'].get().strip()
-            target_str = r['target_entry'].get().strip()
-            if not path_str or not target_str:
-                continue
-                
-            if '://' in path_str:
-                path_str = path_str.split('://', 1)[1]
-                
-            if '/' in path_str:
-                dom, p = path_str.split('/', 1)
-                p = '/' + p.strip('/')
-            else:
-                dom = path_str
-                p = '/root'
-                
-            dom = dom.strip()
-            if dom not in domain_rules_map:
-                domain_rules_map[dom] = []
-            domain_rules_map[dom].append({'path': p, 'target_url': target_str})
-
-        if not domain_rules_map and self.parent.domains_data:
-            for d_item in self.parent.domains_data:
-                dom = d_item.get('domain')
-                if dom:
-                    domain_rules_map[dom] = []
-
-        if not domain_rules_map and not root_url:
-            messagebox.showerror("Error", "Masukkan sekurang-kurangnya 1 baris rule atau aktifkan Root Rule.", parent=self)
+        target_url = self.target_url_entry.get().strip()
+        if not target_url or target_url.lower() in ["http://", "https://", ""]:
+            messagebox.showwarning("Peringatan", "Silakan masukkan Target URL Tujuan yang valid (contoh: https://tujuan.com/landing).", parent=self)
             return
 
+        raw_paths = self.paths_textbox.get("1.0", "end").strip()
+        if not raw_paths:
+            messagebox.showwarning("Peringatan", "Daftar link/path masih kosong. Silakan tempel atau ketik sekurang-kurangnya 1 link/path.", parent=self)
+            return
+
+        default_domain = self.default_domain_entry.get().strip()
+        
+        domain_rules_map, invalid_lines = self.parse_path_lines(raw_paths, default_domain, target_url)
+
+        if not domain_rules_map:
+            msg = "Tidak ada link/path valid yang dapat diproses."
+            if invalid_lines:
+                msg += "\n\nBaris yang tidak dapat diproses:\n" + "\n".join(invalid_lines[:5])
+            messagebox.showerror("Error", msg, parent=self)
+            return
+
+        total_rules = sum(len(rules) for rules in domain_rules_map.values())
         self.btn_submit.configure(state="disabled")
         self.btn_cancel.configure(state="disabled")
         self.progress_var.set(0)
-        self.append_log(f"Memulai pembuatan/update Redirect Rules untuk {len(domain_rules_map)} domain...")
+        self.append_log(f"Memulai pembuatan/update {total_rules} Redirect Rules ke target '{target_url}' untuk {len(domain_rules_map)} domain...")
+        if invalid_lines:
+            for inv in invalid_lines:
+                self.append_log(f"[Warning] Baris diabaikan: {inv}")
 
         threading.Thread(
             target=self._process_rules_worker,
-            args=(domain_rules_map, root_url, custom_token),
+            args=(domain_rules_map, target_url, custom_token),
             daemon=True
         ).start()
 
-    def _process_rules_worker(self, domain_rules_map, root_url, custom_token):
+    def _process_rules_worker(self, domain_rules_map, target_url, custom_token):
         try:
             total = len(domain_rules_map)
             completed = 0
@@ -620,23 +693,21 @@ class RedirectRulesDialog(ctk.CTkToplevel):
                     continue
 
                 active_token_name = "Token CF Khusus" if custom_token else f"Profil '{prof_name}'"
-                self.append_log(f"[{domain_str}] Zone ditemukan ({zone_name}). Memproses rules via {active_token_name}...")
+                self.append_log(f"[{domain_str}] Zone ditemukan ({zone_name}). Memproses {len(path_rules)} rules via {active_token_name}...")
 
+                # root_url is None: Root rules will NEVER be created or modified
                 success, msg = api.apply_redirect_rules(
                     zone_id=zone_id,
-                    root_url=root_url,
+                    root_url=None,
                     path_rules=path_rules,
                     custom_token=custom_token
                 )
 
                 if success:
-                    log_msg = f"[{domain_str}] BERHASIL: Redirect rules diperbarui."
-                    if root_url:
-                        log_msg += f" Root (302 -> {root_url}, Order: Last)."
-                    if path_rules:
-                        log_msg += f" {len(path_rules)} Path rules dibuat/diupdate (Order: First)."
+                    paths_str = ", ".join([r['path'] for r in path_rules])
+                    log_msg = f"[{domain_str}] BERHASIL: {len(path_rules)} Path rules diperbarui -> {target_url} ({paths_str})"
                     self.append_log(log_msg)
-                    app_logger.info(f"[{domain_str}] Redirect rules updated successfully.")
+                    app_logger.info(f"[{domain_str}] Redirect rules updated successfully for paths: {paths_str}")
                 else:
                     self.append_log(f"[{domain_str}] GAGAL: {msg}")
                     app_logger.error(f"[{domain_str}] Redirect rules error: {msg}")
@@ -2201,11 +2272,11 @@ class App(ctk.CTk):
         dialog = CheckDomainIPDialog(parent=self, config=self.config, prefill_domains=domains)
     def open_redirect_rules_dialog(self):
         dialog = RedirectRulesDialog(parent=self, config=self.config)
-        center_window_over_parent(dialog, self, 680, 640)
+        center_window_over_parent(dialog, self, 780, 760)
 
     def open_redirect_rules_dialog_for_domain(self, domain):
         dialog = RedirectRulesDialog(parent=self, config=self.config, initial_domain=domain)
-        center_window_over_parent(dialog, self, 780, 820)
+        center_window_over_parent(dialog, self, 780, 760)
 
     def copy_to_clipboard(self, text):
         self.clipboard_clear()

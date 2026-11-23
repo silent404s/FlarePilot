@@ -466,8 +466,12 @@ class CloudflareAPI:
                 "enabled": True
             }
 
-        # Combine rules: [new_path_rules] + [updated_rules] + [new_root_rule]
-        final_rules = new_path_rules + updated_rules
+        # Separate existing non-root rules and existing root rules so root rules always stay at the end
+        existing_non_root = [r for r in updated_rules if not (r.get('description') == "Root" or "wildcard" in r.get('expression', ''))]
+        existing_root_rules = [r for r in updated_rules if (r.get('description') == "Root" or "wildcard" in r.get('expression', ''))]
+
+        # Combine rules: [new_path_rules] + [existing_non_root] + [existing_root_rules] + [new_root_rule]
+        final_rules = new_path_rules + existing_non_root + existing_root_rules
         if new_root_rule:
             final_rules.append(new_root_rule)
 
